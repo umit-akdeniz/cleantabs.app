@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="32" height="32" style="border: 1px solid #ccc; zoom: 8;"></canvas>
+    <br>
+    <button onclick="downloadFavicon()">Download ICO</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, 32, 0);
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, '#6366f1');
+        
+        // Draw background rounded rectangle
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(2, 2, 28, 28, 6);
+        ctx.fill();
+        
+        // Draw three vertical panels
+        const panelWidth = 2;
+        const panelHeight = 14;
+        const startX = 12;
+        const startY = 9;
+        
+        // Left panel (90% opacity)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(startX, startY, panelWidth, panelHeight);
+        
+        // Middle panel (70% opacity)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillRect(startX + 3, startY, panelWidth, panelHeight);
+        
+        // Right panel (50% opacity)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillRect(startX + 6, startY, panelWidth, panelHeight);
+        
+        function downloadFavicon() {
+            const link = document.createElement('a');
+            link.download = 'favicon.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

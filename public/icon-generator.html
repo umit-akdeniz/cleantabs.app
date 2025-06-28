@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="192" height="192" style="border: 1px solid #ccc;"></canvas>
+    <br>
+    <button onclick="downloadIcon()">Download PNG</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, 192, 0);
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, '#6366f1');
+        
+        // Draw background rounded rectangle
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(6, 6, 180, 180, 20);
+        ctx.fill();
+        
+        // Draw three vertical panels
+        const panelWidth = 12;
+        const panelHeight = 90;
+        const startX = 72;
+        const startY = 51;
+        
+        // Left panel (90% opacity)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(startX, startY, panelWidth, panelHeight, 6);
+        ctx.fill();
+        
+        // Middle panel (70% opacity)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.roundRect(startX + 18, startY, panelWidth, panelHeight, 6);
+        ctx.fill();
+        
+        // Right panel (50% opacity)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.roundRect(startX + 36, startY, panelWidth, panelHeight, 6);
+        ctx.fill();
+        
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'icon-192x192.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background rounded rectangle -->
+  <rect x="2" y="2" width="28" height="28" rx="6" ry="6" fill="url(#gradient)"/>
+  
+  <!-- Three vertical panels representing the 3-panel layout -->
+  <g transform="translate(12, 9)">
+    <!-- Left panel -->
+    <rect x="0" y="0" width="2" height="14" rx="1" fill="white" opacity="0.9"/>
+    <!-- Middle panel -->
+    <rect x="3" y="0" width="2" height="14" rx="1" fill="white" opacity="0.7"/>
+    <!-- Right panel -->
+    <rect x="6" y="0" width="2" height="14" rx="1" fill="white" opacity="0.5"/>
+  </g>
+</svg>
