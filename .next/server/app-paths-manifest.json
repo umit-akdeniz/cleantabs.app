@@ -1,8 +1,0 @@
-{
-  "/api/sites/route": "app/api/sites/route.js",
-  "/api/categories/route": "app/api/categories/route.js",
-  "/api/sites/move/route": "app/api/sites/move/route.js",
-  "/api/check-reminders/route": "app/api/check-reminders/route.js",
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/page": "app/page.js"
-}
