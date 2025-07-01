@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Mail, Crown, Calendar, Shield, Edit3, Save, X } from 'lucide-react';
+import { ArrowLeft, User, Mail, Crown, Calendar, Shield, Edit3, Save, X, CreditCard, Download, RefreshCcw } from 'lucide-react';
 
 export default function AccountPage() {
   const { data: session } = useSession();
@@ -25,7 +25,7 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br">
       {/* Header */}
       <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-700/30 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -135,44 +135,138 @@ export default function AccountPage() {
             </div>
           </div>
 
-          {/* Plan Information */}
+          {/* Subscription Management */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-6">
               <Crown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Subscription Plan</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Subscription Management</h2>
             </div>
-            <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  session?.user?.plan === 'PREMIUM' 
-                    ? 'bg-gradient-to-br from-slate-700 to-slate-800' 
-                    : 'bg-slate-500'
-                }`}>
-                  {session?.user?.plan === 'PREMIUM' ? (
-                    <Crown className="w-5 h-5 text-white" />
-                  ) : (
-                    <User className="w-5 h-5 text-white" />
-                  )}
+            
+            {/* Current Plan */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    session?.user?.plan === 'PREMIUM' 
+                      ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
+                      : 'bg-slate-500'
+                  }`}>
+                    {session?.user?.plan === 'PREMIUM' ? (
+                      <Crown className="w-5 h-5 text-white" />
+                    ) : (
+                      <User className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {session?.user?.plan === 'PREMIUM' ? 'Premium Plan' : 'Free Plan'}
+                      </span>
+                      {session?.user?.plan === 'PREMIUM' && (
+                        <span className="text-sm px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      {session?.user?.plan === 'PREMIUM' 
+                        ? '$9.99/month • Next billing: January 15, 2024' 
+                        : 'Limited to 5 categories and 50 sites'
+                      }
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium text-slate-900 dark:text-slate-100">
-                    {session?.user?.plan === 'PREMIUM' ? 'Premium Plan' : 'Free Plan'}
+                <div className="text-right">
+                  <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {session?.user?.plan === 'PREMIUM' ? '$9.99' : 'Free'}
                   </div>
                   <div className="text-sm text-slate-500 dark:text-slate-400">
-                    {session?.user?.plan === 'PREMIUM' 
-                      ? 'Unlimited sites and categories' 
-                      : 'Limited features available'
-                    }
+                    {session?.user?.plan === 'PREMIUM' ? 'per month' : 'forever'}
                   </div>
                 </div>
               </div>
-              {session?.user?.plan !== 'PREMIUM' && (
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                  Upgrade
-                </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid md:grid-cols-3 gap-3">
+              {session?.user?.plan === 'PREMIUM' ? (
+                <>
+                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    <RefreshCcw className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Manage Subscription</span>
+                  </button>
+                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    <Download className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Download Invoices</span>
+                  </button>
+                  <button className="flex items-center justify-center gap-2 p-3 border border-red-200 dark:border-red-800 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <X className="w-4 h-4" />
+                    <span className="text-sm font-medium">Cancel Subscription</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    <Crown className="w-4 h-4" />
+                    <span className="text-sm font-medium">Upgrade to Premium</span>
+                  </button>
+                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    <CreditCard className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Pricing</span>
+                  </button>
+                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    <Download className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Free Trial</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
+
+          {/* Billing History */}
+          {session?.user?.plan === 'PREMIUM' && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <CreditCard className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Billing History</h2>
+              </div>
+              
+              <div className="space-y-3">
+                {/* Sample invoices */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                      <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-slate-900 dark:text-slate-100">Premium Plan</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">December 15, 2023</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">$9.99</span>
+                    <button className="text-blue-600 hover:text-blue-700 text-sm">Download</button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                      <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-slate-900 dark:text-slate-100">Premium Plan</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">November 15, 2023</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">$9.99</span>
+                    <button className="text-blue-600 hover:text-blue-700 text-sm">Download</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Account Stats */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">

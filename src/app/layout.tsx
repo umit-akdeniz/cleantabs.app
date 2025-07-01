@@ -36,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased h-full bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br`}>
         <Providers>
           <NotificationManager />
           <ToastContainer />

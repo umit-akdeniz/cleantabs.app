@@ -1,10 +1,39 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
 import { generateId } from '@/lib/utils';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     const sites = await prisma.site.findMany({
+      where: {
+        subcategory: {
+          category: {
+            userId: user.id
+          }
+        }
+      },
       include: {
         tags: true,
         subLinks: true,

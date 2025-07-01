@@ -3,18 +3,45 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Settings, Moon, Sun, Globe, Palette, Bell, Shield } from 'lucide-react';
+import { ArrowLeft, Settings, Globe, Bell, Shield, Download, Crown } from 'lucide-react';
 // import { useTheme } from 'next-themes';
 
 export default function SettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [theme, setTheme] = useState('light');
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState('en');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportBookmarks = async () => {
+    if (session?.user?.plan !== 'PREMIUM') {
+      alert('Premium subscription required for bookmark export');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/export/bookmarks', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Export successful! ${data.totalBookmarks} bookmarks have been sent to your email.`);
+      } else {
+        alert(data.error || 'Export failed');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br">
       {/* Header */}
       <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-700/30 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -42,55 +69,6 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid gap-6">
           
-          {/* Appearance */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Palette className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Appearance</h2>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                  Theme
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      theme === 'light' 
-                        ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <Sun className="w-4 h-4" />
-                    Light
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      theme === 'dark' 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' 
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <Moon className="w-4 h-4" />
-                    Dark
-                  </button>
-                  <button
-                    onClick={() => setTheme('system')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      theme === 'system' 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' 
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <Globe className="w-4 h-4" />
-                    System
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Notifications */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
@@ -120,7 +98,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Language */}
+{/* Language - Temporarily disabled
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
             <div className="flex items-center gap-3 mb-4">
               <Globe className="w-5 h-5 text-slate-600 dark:text-slate-400" />
@@ -139,6 +117,52 @@ export default function SettingsPage() {
                   <option value="en">English</option>
                   <option value="tr">Türkçe</option>
                 </select>
+              </div>
+            </div>
+          </div>
+          */}
+
+          {/* Data Export & Backup */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Download className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Data Export & Backup</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-medium text-slate-900 dark:text-slate-100">Export All Bookmarks</h3>
+                      {session?.user?.plan === 'PREMIUM' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs rounded-full">
+                          <Crown className="w-3 h-3" />
+                          Premium
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                          Premium Required
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+                      Export all your bookmarks as an HTML file and receive it via email. 
+                      Compatible with all browsers and bookmark managers.
+                    </p>
+                    <button
+                      onClick={handleExportBookmarks}
+                      disabled={isExporting || session?.user?.plan !== 'PREMIUM'}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                        session?.user?.plan === 'PREMIUM' && !isExporting
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Download className="w-4 h-4" />
+                      {isExporting ? 'Exporting...' : 'Export to Email'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

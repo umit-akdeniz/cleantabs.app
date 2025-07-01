@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Site, SubLink } from '@/types';
 import { Category } from '@/types';
 import { fetchFavicon } from '@/lib/favicon';
@@ -30,6 +30,7 @@ export default function AddSiteModal({ isOpen, onClose, onSave, editingSite, cat
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#10b981');
   const [customInitials, setCustomInitials] = useState('');
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editingSite) {
@@ -56,6 +57,23 @@ export default function AddSiteModal({ isOpen, onClose, onSave, editingSite, cat
       setCustomInitials('');
     }
   }, [editingSite, isOpen, defaultCategoryId, defaultSubcategoryId]);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   const handleUrlChange = async (newUrl: string) => {
     setUrl(newUrl);
@@ -147,7 +165,7 @@ export default function AddSiteModal({ isOpen, onClose, onSave, editingSite, cat
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <div ref={modalRef} className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {editingSite ? 'Edit Site' : 'Add New Site'}

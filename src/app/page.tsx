@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -20,17 +20,19 @@ const SiteDetailPanel = dynamic(() => import('@/components/SiteDetailPanel'), {
 const AddSiteModal = dynamic(() => import('@/components/AddSiteModal'), { ssr: false });
 const PremiumUpgradeModal = dynamic(() => import('@/components/PremiumUpgradeModal'), { ssr: false });
 const CategoryManagementModal = dynamic(() => import('@/components/CategoryManagementModal'), { ssr: false });
+const BookmarkImportModal = dynamic(() => import('@/components/BookmarkImportModal'), { ssr: false });
+const AIPromptsModal = dynamic(() => import('@/components/AIPromptsModal'), { ssr: false });
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import { checkPlanLimits } from '@/lib/planLimits';
-import { Globe, AlertCircle, LogOut, User, Crown, Search, Settings, UserCircle, Sliders, ChevronDown } from 'lucide-react';
+import { Globe, AlertCircle, LogOut, User, Crown, Search, Settings, UserCircle, Sliders, ChevronDown, Sparkles } from 'lucide-react';
 import { showToast } from '@/components/Toast';
 import CookieConsent from '@/components/CookieConsent';
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { categories, sites: dbSites, loading, error, refreshData } = useDatabase();
+  const { categories, sites: dbSites, loading, error, refreshData, refreshCategories } = useDatabase();
   const [sites, setSites] = useState<Site[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
@@ -44,12 +46,56 @@ export default function Home() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showAIPromptsModal, setShowAIPromptsModal] = useState(false);
 
   useEffect(() => {
     if (dbSites.length > 0) {
       setSites(dbSites);
     }
   }, [dbSites]);
+
+  // Load saved state on mount
+  useEffect(() => {
+    if (categories.length > 0 && sites.length > 0) {
+      const savedState = localStorage.getItem('cleantabs-state');
+      if (savedState) {
+        try {
+          const { categoryId, subcategoryId, siteId } = JSON.parse(savedState);
+          
+          // Verify that saved IDs still exist
+          const category = categories.find(c => c.id === categoryId);
+          if (category) {
+            setSelectedCategory(categoryId);
+            
+            const subcategory = category.subcategories.find(s => s.id === subcategoryId);
+            if (subcategory) {
+              setSelectedSubcategory(subcategoryId);
+              
+              const site = sites.find(s => s.id === siteId && s.subcategoryId === subcategoryId);
+              if (site) {
+                setSelectedSite(site);
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Error loading saved state:', error);
+        }
+      }
+    }
+  }, [categories, sites]);
+
+  // Save state when selections change
+  useEffect(() => {
+    if (selectedCategory) {
+      const stateToSave = {
+        categoryId: selectedCategory,
+        subcategoryId: selectedSubcategory,
+        siteId: selectedSite?.id
+      };
+      localStorage.setItem('cleantabs-state', JSON.stringify(stateToSave));
+    }
+  }, [selectedCategory, selectedSubcategory, selectedSite]);
 
 
   const handleAddSite = () => {
@@ -77,7 +123,7 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handleSaveSite = async (site: Site) => {
+  const handleSaveSite = useCallback(async (site: Site) => {
     try {
       if (editingSite) {
         // Update existing site
@@ -89,7 +135,10 @@ export default function Home() {
         
         if (response.ok) {
           const updatedSite = await response.json();
-          setSites(sites.map(s => s.id === site.id ? updatedSite : s));
+          setSites(prevSites => prevSites.map(s => s.id === site.id ? updatedSite : s));
+          if (selectedSite?.id === site.id) {
+            setSelectedSite(updatedSite);
+          }
           showToast({
             type: 'success',
             title: 'Site Updated',
@@ -106,7 +155,7 @@ export default function Home() {
         
         if (response.ok) {
           const newSite = await response.json();
-          setSites([...sites, newSite]);
+          setSites(prevSites => [...prevSites, newSite]);
           showToast({
             type: 'success',
             title: 'Site Added',
@@ -123,11 +172,14 @@ export default function Home() {
         message: 'Site could not be saved. Please try again.'
       });
     }
-  };
+  }, [editingSite, selectedSite?.id, sites]);
 
-  const handleSiteUpdate = (updatedSite: Site) => {
-    setSites(sites.map(s => s.id === updatedSite.id ? updatedSite : s));
-  };
+  const handleSiteUpdate = useCallback((updatedSite: Site) => {
+    setSites(prevSites => prevSites.map(s => s.id === updatedSite.id ? updatedSite : s));
+    if (selectedSite?.id === updatedSite.id) {
+      setSelectedSite(updatedSite);
+    }
+  }, [selectedSite?.id]);
 
   const handleAddCategory = async (name: string) => {
     // Check plan limits for free users
@@ -150,13 +202,14 @@ export default function Home() {
       });
 
       if (response.ok) {
+        const newCategory = await response.json();
         showToast({
           type: 'success',
           title: 'Category Added',
           message: `Category "${name}" has been created successfully`
         });
-        // Refresh categories data
-        setTimeout(() => refreshData(), 1000);
+        // Refresh only categories data without affecting sites
+        await refreshCategories();
       } else {
         console.error('Failed to add category');
         showToast({
@@ -205,8 +258,8 @@ export default function Home() {
           title: 'Subcategory Added',
           message: `Subcategory "${name}" has been added to "${category?.name}"`
         });
-        // Refresh categories data
-        setTimeout(() => refreshData(), 1000);
+        // Refresh only categories data without affecting sites
+        await refreshCategories();
       } else {
         console.error('Failed to add subcategory');
         showToast({
@@ -236,8 +289,19 @@ export default function Home() {
       });
 
       if (response.ok) {
+        // Clear selected states if deleted category was selected
+        if (selectedCategory === categoryId) {
+          setSelectedCategory(null);
+          setSelectedSubcategory(null);
+          setSelectedSite(null);
+        }
         // Refresh categories data
         await refreshData();
+        showToast({
+          type: 'success',
+          title: 'Category Deleted',
+          message: 'Category and all its content have been deleted successfully'
+        });
       } else {
         console.error('Failed to delete category');
         showToast({
@@ -256,6 +320,74 @@ export default function Home() {
     }
   };
 
+  const handleUpdateCategory = async (categoryId: string, name: string) => {
+    try {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+
+      if (response.ok) {
+        showToast({
+          type: 'success',
+          title: 'Category Updated',
+          message: `Category has been updated successfully`
+        });
+        // Refresh only categories data without affecting sites
+        await refreshCategories();
+      } else {
+        console.error('Failed to update category');
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to update category. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Category could not be updated. Please try again.'
+      });
+    }
+  };
+
+  const handleUpdateSubcategory = async (categoryId: string, subcategoryId: string, name: string) => {
+    try {
+      const response = await fetch(`/api/subcategories/${subcategoryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+
+      if (response.ok) {
+        showToast({
+          type: 'success',
+          title: 'Subcategory Updated',
+          message: `Subcategory has been updated successfully`
+        });
+        // Refresh only categories data without affecting sites
+        await refreshCategories();
+      } else {
+        console.error('Failed to update subcategory');
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to update subcategory. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating subcategory:', error);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Subcategory could not be updated. Please try again.'
+      });
+    }
+  };
+
   const handleDeleteSubcategory = async (categoryId: string, subcategoryId: string) => {
     if (!confirm('Are you sure you want to delete this subcategory and all its sites?')) {
       return;
@@ -267,8 +399,18 @@ export default function Home() {
       });
 
       if (response.ok) {
+        // Clear selected states if deleted subcategory was selected
+        if (selectedSubcategory === subcategoryId) {
+          setSelectedSubcategory(null);
+          setSelectedSite(null);
+        }
         // Refresh categories data
         await refreshData();
+        showToast({
+          type: 'success',
+          title: 'Subcategory Deleted',
+          message: 'Subcategory and all its sites have been deleted successfully'
+        });
       } else {
         console.error('Failed to delete subcategory');
         showToast({
@@ -287,7 +429,7 @@ export default function Home() {
     }
   };
 
-  const handleDeleteSite = async (id: string) => {
+  const handleDeleteSite = useCallback(async (id: string) => {
     const siteToDelete = sites.find(s => s.id === id);
     if (confirm('Are you sure you want to delete this site?')) {
       try {
@@ -296,7 +438,7 @@ export default function Home() {
         });
         
         if (response.ok) {
-          setSites(sites.filter(s => s.id !== id));
+          setSites(prevSites => prevSites.filter(s => s.id !== id));
           if (selectedSite?.id === id) {
             setSelectedSite(null);
           }
@@ -315,7 +457,7 @@ export default function Home() {
         });
       }
     }
-  };
+  }, [sites, selectedSite?.id]);
 
   const handleAddSubLink = (siteId: string) => {
     const site = sites.find(s => s.id === siteId);
@@ -324,7 +466,7 @@ export default function Home() {
     }
   };
 
-  const handleCategorySelect = (categoryId: string) => {
+  const handleCategorySelect = useCallback((categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     setSelectedCategory(categoryId);
     
@@ -349,9 +491,9 @@ export default function Home() {
     }
     
     setSelectedItem(null);
-  };
+  }, [categories, sites]);
 
-  const handleSubcategorySelect = (subcategoryId: string) => {
+  const handleSubcategorySelect = useCallback((subcategoryId: string) => {
     setSelectedSubcategory(subcategoryId);
     
     // Auto-select first site in selected subcategory if available
@@ -366,7 +508,7 @@ export default function Home() {
     }
     
     setSelectedItem(null);
-  };
+  }, [sites, selectedCategory]);
 
   const handleItemSelect = (itemId: string) => {
     setSelectedItem(itemId);
@@ -377,25 +519,29 @@ export default function Home() {
     setShowSearchResults(query.length > 0);
   };
 
-  // Filter sites based on search query
-  const filteredSites = searchQuery 
-    ? sites.filter(site => 
-        site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        site.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        site.url.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 8)
-    : [];
+  // Filter sites based on search query (memoized)
+  const filteredSites = useMemo(() => {
+    if (!searchQuery) return [];
+    return sites.filter(site => 
+      site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.url.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 8);
+  }, [sites, searchQuery]);
 
   const handleTagFilter = (tags: string[]) => {
     setSelectedTags(tags);
   };
 
-  // Get all available tags from sites
-  const availableTags = Array.from(new Set(sites.flatMap(site => site.tags || [])));
+  // Get all available tags from sites (memoized)
+  const availableTags = useMemo(() => 
+    Array.from(new Set(sites.flatMap(site => site.tags || []))), 
+    [sites]
+  );
 
-  const handleSiteSelect = (site: Site) => {
+  const handleSiteSelect = useCallback((site: Site) => {
     setSelectedSite(site);
-  };
+  }, []);
 
   // Handle moving subcategory to different category
   const handleMoveSubcategory = async (subcategoryId: string, targetCategoryId: string) => {
@@ -412,8 +558,8 @@ export default function Home() {
           title: 'Subcategory Moved',
           message: 'Subcategory has been moved successfully'
         });
-        // Refresh data
-        setTimeout(() => refreshData(), 1000);
+        // Refresh only categories data without affecting current selections
+        await refreshCategories();
       } else {
         throw new Error('Failed to move subcategory');
       }
@@ -429,7 +575,7 @@ export default function Home() {
 
 
   // Handle moving site to different subcategory
-  const handleMoveSite = async (siteId: string, targetSubcategoryId: string) => {
+  const handleMoveSite = useCallback(async (siteId: string, targetSubcategoryId: string) => {
     console.log('handleMoveSite called:', { siteId, targetSubcategoryId });
     try {
       const response = await fetch(`/api/sites/move`, {
@@ -441,7 +587,10 @@ export default function Home() {
       if (response.ok) {
         const updatedSite = await response.json();
         console.log('Site moved successfully:', updatedSite);
-        setSites(sites.map(s => s.id === siteId ? updatedSite : s));
+        setSites(prevSites => prevSites.map(s => s.id === siteId ? updatedSite : s));
+        if (selectedSite?.id === siteId) {
+          setSelectedSite(updatedSite);
+        }
         showToast({
           type: 'success',
           title: 'Site Moved',
@@ -466,7 +615,7 @@ export default function Home() {
         message: 'Failed to move site. Please try again.'
       });
     }
-  };
+  }, [selectedSite?.id]);
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -478,7 +627,7 @@ export default function Home() {
   // Show loading while checking authentication
   if (status === 'loading') {
     return (
-      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center">
+      <div className="h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="relative">
             <div className="w-12 h-12 border-3 border-slate-200 dark:border-slate-700 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
@@ -522,7 +671,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex flex-col">
+    <div className="h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br flex flex-col">
       
       {/* Header */}
       <div className="flex items-center justify-between p-3 lg:p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-700/30 shadow-sm relative z-50">
@@ -598,6 +747,11 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-2 lg:gap-3">
+          {/* Mobile Theme Toggle */}
+          <div className="md:hidden">
+            <ThemeToggle />
+          </div>
+          
           {/* User Profile Section */}
           <div className="relative">
             <button
@@ -616,7 +770,7 @@ export default function Home() {
               
               {/* User Info */}
               <div className="hidden md:block text-left">
-                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                <div className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">
                   {session?.user?.name || session?.user?.email}
                 </div>
               </div>
@@ -637,10 +791,21 @@ export default function Home() {
                       Premium User
                     </div>
                   )}
-                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">
                     {session?.user?.name || 'User'}
                   </div>
                 </div>
+                
+                <button 
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    router.push('/account');
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3"
+                >
+                  <UserCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  My Profile
+                </button>
                 
                 <button 
                   onClick={() => {
@@ -653,17 +818,7 @@ export default function Home() {
                   Settings
                 </button>
                 
-                <button 
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    router.push('/account');
-                  }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3"
-                >
-                  <UserCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                  My Account
-                </button>
-                
+{/* Preferences temporarily disabled
                 <button 
                   onClick={() => {
                     setShowProfileMenu(false);
@@ -673,6 +828,18 @@ export default function Home() {
                 >
                   <Sliders className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                   Preferences
+                </button>
+                */}
+
+                <button 
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    setShowAIPromptsModal(true);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3"
+                >
+                  <Sparkles className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  AI Prompts
                 </button>
                 
                 <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
@@ -688,7 +855,10 @@ export default function Home() {
             )}
           </div>
 
-          <ThemeToggle />
+          {/* Desktop Theme Toggle */}
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
@@ -720,6 +890,7 @@ export default function Home() {
             availableTags={availableTags}
             selectedTags={selectedTags}
             onOpenCategoryModal={() => setShowCategoryModal(true)}
+            onOpenImportModal={() => setShowImportModal(true)}
             onEditSite={handleEditSite}
             onDeleteSite={handleDeleteSite}
             onSiteUpdate={handleSiteUpdate}
@@ -728,7 +899,7 @@ export default function Home() {
           />
           
           {/* Detail Panel - Tablet & Desktop Only */}
-          <div className="hidden md:block flex-1 min-w-0">
+          <div className="hidden md:block flex-1 min-w-0 border-l border-gray-100 dark:border-slate-800">
             <SiteDetailPanel
               site={selectedSite}
               onEdit={handleEditSite}
@@ -762,8 +933,24 @@ export default function Home() {
         categories={categories}
         onAddCategory={handleAddCategory}
         onAddSubcategory={handleAddSubcategory}
+        onUpdateCategory={handleUpdateCategory}
+        onUpdateSubcategory={handleUpdateSubcategory}
         onDeleteCategory={handleDeleteCategory}
         onDeleteSubcategory={handleDeleteSubcategory}
+      />
+
+      <BookmarkImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={() => {
+          refreshData();
+          setShowImportModal(false);
+        }}
+      />
+
+      <AIPromptsModal
+        isOpen={showAIPromptsModal}
+        onClose={() => setShowAIPromptsModal(false)}
       />
       
       <CookieConsent />

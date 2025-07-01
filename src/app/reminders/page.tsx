@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Bell, Calendar, Clock, Edit, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Bell, Calendar, Clock, Edit, Trash2, Plus, CheckCircle, XCircle, Download, Crown } from 'lucide-react';
 
 interface Reminder {
   id: string;
@@ -85,6 +85,33 @@ export default function RemindersPage() {
     return true;
   });
 
+  const downloadCalendarEvent = async (reminderId: string) => {
+    if (session?.user?.plan !== 'PREMIUM') {
+      alert('Premium subscription required for calendar export');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/calendar/reminder?id=${reminderId}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reminder-${reminderId}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to download calendar event');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Download failed. Please try again.');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -99,7 +126,7 @@ export default function RemindersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br">
       {/* Header */}
       <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/20 dark:border-slate-700/30 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -243,6 +270,25 @@ export default function RemindersPage() {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {/* Calendar Export Button */}
+                    <div className="relative">
+                      <button
+                        onClick={() => downloadCalendarEvent(reminder.id)}
+                        disabled={session?.user?.plan !== 'PREMIUM'}
+                        className={`p-2 rounded-lg transition-colors ${
+                          session?.user?.plan === 'PREMIUM'
+                            ? 'text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                            : 'text-slate-400 cursor-not-allowed'
+                        }`}
+                        title={session?.user?.plan === 'PREMIUM' ? 'Download calendar event' : 'Premium feature'}
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      {session?.user?.plan !== 'PREMIUM' && (
+                        <Crown className="w-3 h-3 text-amber-500 absolute -top-1 -right-1" />
+                      )}
+                    </div>
+                    
                     <button
                       onClick={() => toggleCompleted(reminder.id)}
                       className={`p-2 rounded-lg transition-colors ${

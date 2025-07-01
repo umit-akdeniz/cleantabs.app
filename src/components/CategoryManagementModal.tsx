@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Plus, Edit, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Plus, Edit3, Trash2, Save, ChevronRight, Folder, Tags } from 'lucide-react';
 import { Category } from '@/types';
 
 interface CategoryManagementModalProps {
@@ -27,15 +27,38 @@ export default function CategoryManagementModal({
   onDeleteCategory,
   onDeleteSubcategory
 }: CategoryManagementModalProps) {
+  const [activeTab, setActiveTab] = useState<'manage' | 'add'>('manage');
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<string | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
+  const [editSubcategoryName, setEditSubcategoryName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (newCategoryName.trim()) {
       if (categories.length >= 10) {
-        alert('Maksimum 10 ana kategori ekleyebilirsiniz!');
+        alert('Maximum 10 main categories allowed!');
         return;
       }
       onAddCategory(newCategoryName.trim());
@@ -48,7 +71,7 @@ export default function CategoryManagementModal({
     if (newSubcategoryName.trim() && selectedCategoryId) {
       const selectedCategory = categories.find(c => c.id === selectedCategoryId);
       if (selectedCategory && selectedCategory.subcategories.length >= 15) {
-        alert('Bir kategoride maksimum 15 alt kategori olabilir!');
+        alert('Maximum 15 subcategories per category allowed!');
         return;
       }
       onAddSubcategory(selectedCategoryId, newSubcategoryName.trim());
@@ -56,148 +79,299 @@ export default function CategoryManagementModal({
     }
   };
 
-  
+  const startEditingCategory = (categoryId: string, currentName: string) => {
+    setEditingCategory(categoryId);
+    setEditCategoryName(currentName);
+  };
+
+  const startEditingSubcategory = (subcategoryId: string, currentName: string) => {
+    setEditingSubcategory(subcategoryId);
+    setEditSubcategoryName(currentName);
+  };
+
+  const saveEditCategory = () => {
+    if (editingCategory && editCategoryName.trim() && onUpdateCategory) {
+      onUpdateCategory(editingCategory, editCategoryName.trim());
+      setEditingCategory(null);
+      setEditCategoryName('');
+    }
+  };
+
+  const saveEditSubcategory = (categoryId: string) => {
+    if (editingSubcategory && editSubcategoryName.trim() && onUpdateSubcategory) {
+      onUpdateSubcategory(categoryId, editingSubcategory, editSubcategoryName.trim());
+      setEditingSubcategory(null);
+      setEditSubcategoryName('');
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingCategory(null);
+    setEditingSubcategory(null);
+    setEditCategoryName('');
+    setEditSubcategoryName('');
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto shadow-elevated border border-gray-200/50 dark:border-gray-700/50">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Kategori Yönetimi
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-slate-800 rounded-xl w-[900px] h-[600px] overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Category Management
           </h2>
           <button 
             onClick={onClose} 
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            className="p-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-8">
-          {/* Ana Kategori Ekleme */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Ana Kategori Ekle
-            </h3>
-            <form onSubmit={handleAddCategory} className="flex gap-3">
-              <input
-                type="text"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                placeholder="Kategori adını girin"
-                required
-              />
-              <button
-                type="submit"
-                className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 font-medium transition-all duration-200 shadow-subtle hover:shadow-elevated flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Ekle
-              </button>
-            </form>
-          </div>
-
-          {/* Alt Kategori Ekleme */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Alt Kategori Ekle
-            </h3>
-            <div className="space-y-3">
-              <select
-                value={selectedCategoryId}
-                onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                required
-              >
-                <option value="">Ana kategori seçin</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <form onSubmit={handleAddSubcategory} className="flex gap-3">
-                <input
-                  type="text"
-                  value={newSubcategoryName}
-                  onChange={(e) => setNewSubcategoryName(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  placeholder="Alt kategori adını girin"
-                  disabled={!selectedCategoryId}
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={!selectedCategoryId}
-                  className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 font-medium transition-all duration-200 shadow-subtle hover:shadow-elevated flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Plus className="w-4 h-4" />
-                  Ekle
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Mevcut Kategoriler */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Mevcut Kategoriler
-            </h3>
-            <div className="space-y-4">
-              {categories.map((category) => (
-                <div key={category.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900 dark:text-white">
-                      {category.name}
-                    </h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onDeleteCategory?.(category.id)}
-                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                        title="Kategoriyi Sil"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {category.subcategories.length > 0 && (
-                    <div className="space-y-2 ml-4">
-                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Alt Kategoriler:
-                      </h5>
-                      {category.subcategories.map((subcategory) => (
-                        <div key={subcategory.id} className="flex items-center justify-between py-1">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            • {subcategory.name}
-                          </span>
-                          <button
-                            onClick={() => onDeleteSubcategory?.(category.id, subcategory.id)}
-                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                            title="Alt Kategoriyi Sil"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-200 dark:border-slate-700">
           <button
-            onClick={onClose}
-            className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 font-medium transition-colors"
+            onClick={() => setActiveTab('manage')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'manage'
+                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
           >
-            Kapat
+            Manage
+          </button>
+          <button
+            onClick={() => setActiveTab('add')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'add'
+                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Add New
           </button>
         </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto h-[480px]">
+          {activeTab === 'manage' ? (
+            /* Manage Categories Tab */
+            <div className="p-4">
+              {categories.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Folder className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-2">No categories yet</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Create your first category</p>
+                  <button
+                    onClick={() => setActiveTab('add')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                  >
+                    Add Category
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {categories.map((category) => (
+                    <div key={category.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                      {/* Category Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {editingCategory === category.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editCategoryName}
+                                onChange={(e) => setEditCategoryName(e.target.value)}
+                                className="px-2 py-1 text-sm font-medium border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditCategory();
+                                  if (e.key === 'Escape') cancelEdit();
+                                }}
+                                autoFocus
+                              />
+                              <button
+                                onClick={saveEditCategory}
+                                className="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded"
+                              >
+                                <Save className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-slate-900 dark:text-slate-100">
+                                {category.name}
+                              </h3>
+                              <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">
+                                {category.subcategories.length}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {editingCategory !== category.id && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => startEditingCategory(category.id, category.name)}
+                              className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                              title="Edit"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => onDeleteCategory?.(category.id)}
+                              className="p-1 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Subcategories */}
+                      {category.subcategories.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Subcategories:</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {category.subcategories.map((subcategory) => (
+                              <div key={subcategory.id} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-700/50 rounded">
+                                {editingSubcategory === subcategory.id ? (
+                                  <div className="flex items-center gap-1 flex-1">
+                                    <input
+                                      type="text"
+                                      value={editSubcategoryName}
+                                      onChange={(e) => setEditSubcategoryName(e.target.value)}
+                                      className="flex-1 px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') saveEditSubcategory(category.id);
+                                        if (e.key === 'Escape') cancelEdit();
+                                      }}
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() => saveEditSubcategory(category.id)}
+                                      className="p-0.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded"
+                                    >
+                                      <Save className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={cancelEdit}
+                                      className="p-0.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className="text-xs text-slate-700 dark:text-slate-300 flex-1">
+                                      {subcategory.name}
+                                    </span>
+                                    <div className="flex items-center gap-0.5">
+                                      <button
+                                        onClick={() => startEditingSubcategory(subcategory.id, subcategory.name)}
+                                        className="p-0.5 text-slate-400 hover:text-blue-600 rounded"
+                                        title="Edit"
+                                      >
+                                        <Edit3 className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={() => onDeleteSubcategory?.(category.id, subcategory.id)}
+                                        className="p-0.5 text-slate-400 hover:text-red-600 rounded"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Add New Tab */
+            <div className="p-4 space-y-4">
+              {/* Add Category Section */}
+              <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Add Category</h3>
+                <form onSubmit={handleAddCategory} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 placeholder-slate-400"
+                    placeholder="Category name..."
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors"
+                  >
+                    Add
+                  </button>
+                </form>
+              </div>
+
+              {/* Add Subcategory Section */}
+              <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Add Subcategory</h3>
+                <div className="space-y-2">
+                  <select
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select category...</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <form onSubmit={handleAddSubcategory} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 placeholder-slate-400 disabled:opacity-50"
+                      placeholder="Subcategory name..."
+                      disabled={!selectedCategoryId}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={!selectedCategoryId}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors"
+                    >
+                      Add
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

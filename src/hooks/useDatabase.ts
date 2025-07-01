@@ -7,6 +7,7 @@ interface DatabaseData {
   loading: boolean;
   error: string | null;
   refreshData: () => Promise<void>;
+  refreshCategories: () => Promise<void>;
 }
 
 export function useDatabase(): DatabaseData {
@@ -52,11 +53,24 @@ export function useDatabase(): DatabaseData {
     await fetchData();
   }, [fetchData]);
 
+  const refreshCategories = useCallback(async () => {
+    try {
+      const categoriesRes = await fetch('/api/categories', { cache: 'no-store' });
+      if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
+      const categoriesData = await categoriesRes.json();
+      setCategories(categoriesData);
+    } catch (err) {
+      console.error('Categories fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+  }, []);
+
   return {
     categories,
     sites,
     loading,
     error,
-    refreshData
+    refreshData,
+    refreshCategories
   };
 }

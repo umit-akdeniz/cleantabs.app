@@ -8,6 +8,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(request: Request) {
+  // Return early if Stripe is not configured
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: 'Stripe not configured' },
+      { status: 503 }
+    );
+  }
+  
   try {
     const body = await request.text();
     const signature = (await headers()).get('stripe-signature')!;
@@ -32,27 +40,51 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         
-        if (session.metadata?.userId) {
+        if (session.metadata?.userId && session.subscription) {
           await prisma.user.update({
             where: { id: session.metadata.userId },
-            data: { plan: 'PREMIUM' }
+            data: {
+              plan: 'PREMIUM',
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+            }
           });
         }
         break;
       }
 
+      case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        
-        // Find user by customer email and downgrade to FREE
-        if (subscription.customer) {
-          const customer = await stripe.customers.retrieve(subscription.customer as string);
-          if (customer && !customer.deleted && customer.email) {
-            await prisma.user.updateMany({
-              where: { email: customer.email },
-              data: { plan: 'FREE' }
-            });
-          }
+        const customerId = subscription.customer as string;
+
+        const user = await prisma.user.findFirst({
+          where: { stripeCustomerId: customerId },
+        });
+
+        if (user) {
+          const isActive = subscription.status === 'active';
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              plan: isActive ? 'PREMIUM' : 'FREE',
+            },
+          });
+        }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        const user = await prisma.user.findFirst({
+          where: { stripeCustomerId: customerId },
+        });
+
+        if (user) {
+          console.log(`Payment failed for user ${user.email}`);
+          // Optionally send email notification
         }
         break;
       }

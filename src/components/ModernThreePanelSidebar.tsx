@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Category, Site } from '@/types';
-import { Plus, Settings, Search, Filter, ChevronRight, FolderOpen, Globe, Clock, Menu, X } from 'lucide-react';
+import { Plus, Settings, Search, Filter, ChevronRight, FolderOpen, Globe, Clock, Menu, X, Download } from 'lucide-react';
 import MobileLayoutNew from './MobileLayoutNew';
 import CreativeIcon from './CreativeIcon';
 import ClientOnly from './ClientOnly';
@@ -29,6 +29,7 @@ interface ModernThreePanelSidebarProps {
   onSiteUpdate?: (site: Site) => void;
   onMoveSubcategory?: (subcategoryId: string, targetCategoryId: string) => void;
   onMoveSite?: (siteId: string, targetSubcategoryId: string) => void;
+  onOpenImportModal?: () => void;
 }
 
 export default function ModernThreePanelSidebar({
@@ -48,6 +49,7 @@ export default function ModernThreePanelSidebar({
   onSiteUpdate,
   onMoveSubcategory,
   onMoveSite,
+  onOpenImportModal,
 }: ModernThreePanelSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -180,6 +182,13 @@ export default function ModernThreePanelSidebar({
                 <Settings className="w-4 h-4" />
               </button>
               <button
+                onClick={onOpenImportModal}
+                className="p-2 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-800 rounded-lg transition-all duration-200 shadow-subtle"
+                title="Import Bookmarks"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button
                 onClick={onAddSite}
                 className="gradient-primary text-white p-2 rounded-lg hover:opacity-90 hover:shadow-elevated transition-all duration-200 shadow-subtle"
                 title="Add Site"
@@ -215,7 +224,7 @@ export default function ModernThreePanelSidebar({
                       : 'bg-transparent'
                   }`}></div>
                   <div className="flex-1 ml-3">
-                    <div className="font-medium text-sm">{category.name}</div>
+                    <div className="font-medium text-sm">{category.name.charAt(0).toUpperCase() + category.name.slice(1).toLowerCase()}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {category.subcategories?.length || 0} subcategories
                     </div>
@@ -233,7 +242,7 @@ export default function ModernThreePanelSidebar({
         <div className="w-64 lg:w-80 border-r border-brand-200/20 dark:border-brand-700/30 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle flex max-h-full">
           {/* Header */}
           <div className="h-20 p-4 border-b border-brand-200/30 dark:border-brand-700/50 flex items-center">
-            {selectedCategoryData && (
+            {selectedCategoryData ? (
               <div>
                 <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">
                   {selectedCategoryData.name}
@@ -241,6 +250,11 @@ export default function ModernThreePanelSidebar({
                 <p className="text-xs text-brand-500 dark:text-brand-400">
                   Choose a subcategory
                 </p>
+              </div>
+            ) : (
+              <div>
+                <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Subcategories</h2>
+                <p className="text-xs text-brand-500 dark:text-brand-400">Select a category to view subcategories</p>
               </div>
             )}
           </div>
@@ -261,7 +275,7 @@ export default function ModernThreePanelSidebar({
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'subcategory', subcategory.id)}
                       onClick={() => onSubcategorySelect(subcategory.id)}
-                      className={`w-full p-2.5 rounded-lg text-left transition-all duration-200 ease-in-out flex items-center gap-2 group relative cursor-move ${
+                      className={`w-full p-2.5 rounded-lg text-left transition-all duration-200 ease-in-out flex items-center gap-2 group relative ${
                         selectedSubcategory === subcategory.id
                           ? 'bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300 shadow-sm'
                           : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'
@@ -281,7 +295,7 @@ export default function ModernThreePanelSidebar({
                           : 'bg-transparent'
                       }`}></div>
                       <div className="flex-1 ml-3">
-                        <div className="font-medium text-sm">{subcategory.name}</div>
+                        <div className="font-medium text-sm">{subcategory.name.charAt(0).toUpperCase() + subcategory.name.slice(1).toLowerCase()}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           {sitesCount} sites
                         </div>
@@ -295,11 +309,11 @@ export default function ModernThreePanelSidebar({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-16 h-16 bg-brand-100 dark:bg-brand-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <FolderOpen className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+                <div className="w-12 h-12 bg-brand-100 dark:bg-brand-800 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <FolderOpen className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                 </div>
-                <p className="text-brand-500 dark:text-brand-400 mb-2 font-medium">Select a Category</p>
-                <p className="text-sm text-brand-400 dark:text-brand-500">
+                <p className="text-brand-500 dark:text-brand-400 mb-1 font-medium text-sm">Select a Category</p>
+                <p className="text-xs text-brand-400 dark:text-brand-500">
                   Choose a category to view subcategories
                 </p>
               </div>
@@ -339,7 +353,7 @@ export default function ModernThreePanelSidebar({
                     onDragStart={(e) => handleDragStart(e, 'site', site.id)}
                     onDragEnd={handleDragEnd}
                     onClick={() => onSiteSelect(site)}
-                    className={`w-full p-3 rounded-lg text-left transition-all duration-200 ease-in-out group cursor-move ${
+                    className={`w-full p-3 rounded-lg text-left transition-all duration-200 ease-in-out group ${
                       selectedSite?.id === site.id
                         ? 'bg-primary-50 dark:bg-primary-900/30 shadow-md border border-primary-200 dark:border-primary-800'
                         : 'bg-white dark:bg-brand-800/50 hover:bg-brand-50 dark:hover:bg-brand-800 shadow-sm border border-brand-200/50 dark:border-brand-700/50'
@@ -361,7 +375,7 @@ export default function ModernThreePanelSidebar({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-xs text-brand-900 dark:text-brand-100 truncate">
-                          {site.name}
+                          {site.name.charAt(0).toUpperCase() + site.name.slice(1).toLowerCase()}
                         </div>
                         <div className="text-xs text-brand-500 dark:text-brand-400 truncate">
                           {site.url.replace(/^https?:\/\//, '')}
@@ -376,11 +390,11 @@ export default function ModernThreePanelSidebar({
               </div>
             ) : selectedSubcategoryData ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="w-16 h-16 bg-brand-100 dark:bg-brand-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+                <div className="w-12 h-12 bg-brand-100 dark:bg-brand-800 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Globe className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                 </div>
-                <p className="text-brand-500 dark:text-brand-400 mb-2">No sites yet</p>
-                <p className="text-sm text-brand-400 dark:text-brand-500 mb-4">
+                <p className="text-brand-500 dark:text-brand-400 mb-1 text-sm">No sites yet</p>
+                <p className="text-xs text-brand-400 dark:text-brand-500 mb-4">
                   Add your first site to this subcategory
                 </p>
                 <button
@@ -392,12 +406,12 @@ export default function ModernThreePanelSidebar({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-16 h-16 bg-brand-100 dark:bg-brand-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+                <div className="w-12 h-12 bg-brand-100 dark:bg-brand-800 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Globe className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                 </div>
-                <p className="text-brand-500 dark:text-brand-400 mb-2 font-medium">Select a Subcategory</p>
-                <p className="text-sm text-brand-400 dark:text-brand-500">
-                  Choose a subcategory to view and manage sites
+                <p className="text-brand-500 dark:text-brand-400 mb-1 font-medium text-sm">Select a Subcategory</p>
+                <p className="text-xs text-brand-400 dark:text-brand-500">
+                  Choose a subcategory to view sites
                 </p>
               </div>
             )}
