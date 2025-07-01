@@ -14,6 +14,7 @@ interface CategoryManagementModalProps {
   onUpdateSubcategory?: (categoryId: string, subcategoryId: string, name: string) => void;
   onDeleteCategory?: (categoryId: string) => void;
   onDeleteSubcategory?: (categoryId: string, subcategoryId: string) => void;
+  selectedCategoryId?: string | null;
 }
 
 export default function CategoryManagementModal({
@@ -25,7 +26,8 @@ export default function CategoryManagementModal({
   onUpdateCategory,
   onUpdateSubcategory,
   onDeleteCategory,
-  onDeleteSubcategory
+  onDeleteSubcategory,
+  selectedCategoryId
 }: CategoryManagementModalProps) {
   const [activeTab, setActiveTab] = useState<'manage' | 'add'>('manage');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function CategoryManagementModal({
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedCategoryIdForSubcategory, setSelectedCategoryIdForSubcategory] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Click outside to close
@@ -54,6 +56,14 @@ export default function CategoryManagementModal({
     };
   }, [isOpen, onClose]);
 
+  // Auto-select category and switch to add tab when selectedCategoryId is provided
+  useEffect(() => {
+    if (isOpen && selectedCategoryId) {
+      setActiveTab('add');
+      setSelectedCategoryIdForSubcategory(selectedCategoryId);
+    }
+  }, [isOpen, selectedCategoryId]);
+
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (newCategoryName.trim()) {
@@ -68,13 +78,13 @@ export default function CategoryManagementModal({
 
   const handleAddSubcategory = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newSubcategoryName.trim() && selectedCategoryId) {
-      const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+    if (newSubcategoryName.trim() && selectedCategoryIdForSubcategory) {
+      const selectedCategory = categories.find(c => c.id === selectedCategoryIdForSubcategory);
       if (selectedCategory && selectedCategory.subcategories.length >= 15) {
         alert('Maximum 15 subcategories per category allowed!');
         return;
       }
-      onAddSubcategory(selectedCategoryId, newSubcategoryName.trim());
+      onAddSubcategory(selectedCategoryIdForSubcategory, newSubcategoryName.trim());
       setNewSubcategoryName('');
     }
   };
@@ -336,8 +346,8 @@ export default function CategoryManagementModal({
                 <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Add Subcategory</h3>
                 <div className="space-y-2">
                   <select
-                    value={selectedCategoryId}
-                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                    value={selectedCategoryIdForSubcategory}
+                    onChange={(e) => setSelectedCategoryIdForSubcategory(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500"
                     required
                   >
@@ -355,12 +365,12 @@ export default function CategoryManagementModal({
                       onChange={(e) => setNewSubcategoryName(e.target.value)}
                       className="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 placeholder-slate-400 disabled:opacity-50"
                       placeholder="Subcategory name..."
-                      disabled={!selectedCategoryId}
+                      disabled={!selectedCategoryIdForSubcategory}
                       required
                     />
                     <button
                       type="submit"
-                      disabled={!selectedCategoryId}
+                      disabled={!selectedCategoryIdForSubcategory}
                       className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors"
                     >
                       Add

@@ -284,17 +284,17 @@ export default function MobileLayoutNew({
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="h-screen w-full bg-gray-50 dark:bg-brand-900 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
       {/* Top Menu - Categories */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 w-full">
+      <div className="bg-white/98 dark:bg-brand-800/98 backdrop-blur-sm border-b border-brand-200/30 dark:border-brand-700/50 p-4 w-full">
         {/* Header with actions */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">CleanTabs</h2>
+          <h2 className="text-lg font-semibold text-brand-900 dark:text-brand-100">CleanTabs</h2>
           <div className="flex items-center gap-2">
             {onOpenCategoryModal && (
               <button
                 onClick={onOpenCategoryModal}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-700 rounded-lg transition-colors"
                 title="Manage Categories"
               >
                 <Settings className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function MobileLayoutNew({
           
           {/* Search Results Dropdown */}
           {showSearchResults && filteredSites.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-brand-800 border border-brand-200 dark:border-brand-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
               {filteredSites.map((site) => {
                 const category = categories.find(c => 
                   c.subcategories.some(sub => sub.id === site.subcategoryId)
@@ -353,7 +353,7 @@ export default function MobileLayoutNew({
                       setShowSearchResults(false);
                       setSearchQuery('');
                     }}
-                    className="w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors"
+                    className="w-full p-3 text-left hover:bg-brand-50 dark:hover:bg-brand-700 border-b border-brand-100 dark:border-brand-700 last:border-b-0 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <CreativeIcon
@@ -366,10 +366,10 @@ export default function MobileLayoutNew({
                         favicon={site.favicon || undefined}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+                        <div className="font-medium text-sm text-brand-900 dark:text-brand-100 truncate">
                           {site.name}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <div className="text-xs text-brand-500 dark:text-brand-400 truncate">
                           {category?.name} → {subcategory?.name}
                         </div>
                       </div>
@@ -426,22 +426,22 @@ export default function MobileLayoutNew({
 
       {/* Second Menu - Subcategories */}
       {selectedCategoryData && (
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 w-full">
+        <div className="bg-white/98 dark:bg-brand-800/98 backdrop-blur-sm border-b border-brand-200/30 dark:border-brand-700/50 p-4 w-full">
           <div className="relative w-full">
             <button
               onClick={() => setIsSubcategoryDropdownOpen(!isSubcategoryDropdownOpen)}
-              className="w-full flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+              className="w-full flex items-center justify-between p-3 bg-brand-100 dark:bg-brand-700 rounded-lg border border-brand-200 dark:border-brand-600"
             >
-              <span className="font-medium text-gray-900 dark:text-gray-100">
+              <span className="font-medium text-brand-900 dark:text-brand-100">
                 {selectedSubcategoryData ? selectedSubcategoryData.name : 'Select Subcategory'}
               </span>
-              <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${
+              <ChevronDown className={`w-5 h-5 text-brand-500 transition-transform ${
                 isSubcategoryDropdownOpen ? 'rotate-180' : ''
               }`} />
             </button>
             
             {isSubcategoryDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-brand-800 border border-brand-200 dark:border-brand-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
                 {selectedCategoryData.subcategories.map((subcategory) => {
                   const sitesCount = sites.filter(site => site.subcategoryId === subcategory.id).length;
                   return (
@@ -484,8 +484,8 @@ export default function MobileLayoutNew({
 
       {/* Sites List - Thin rows, 5 sites per row for desktop, stacked for mobile */}
       {selectedSubcategoryData && sitesInSubcategory.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 w-full">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <div className="bg-white/98 dark:bg-brand-800/98 backdrop-blur-sm border-b border-brand-200/30 dark:border-brand-700/50 p-4 w-full">
+          <h3 className="text-lg font-semibold text-brand-900 dark:text-brand-100 mb-4">
             {selectedSubcategoryData.name} Sites
           </h3>
           <div className="space-y-1 max-h-48 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -536,8 +536,8 @@ export default function MobileLayoutNew({
 
       {/* Selected Site Detail - Bottom */}
       {selectedSite && (
-        <div className="bg-white dark:bg-gray-800 p-4 w-full min-h-screen">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white/98 dark:bg-brand-800/98 backdrop-blur-sm p-4 w-full min-h-screen">
+          <div className="bg-white dark:bg-brand-800 rounded-lg border border-brand-200 dark:border-brand-700 p-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="relative">
                 <div 

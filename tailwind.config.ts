@@ -103,6 +103,16 @@ const config: Config = {
         'slide-in': 'slide-in 0.3s ease-out',
         'fade-in': 'fade-in 0.2s ease-in',
       },
+      animationDelay: {
+        '75': '75ms',
+        '100': '100ms',
+        '150': '150ms',
+        '200': '200ms',
+        '300': '300ms',
+        '500': '500ms',
+        '700': '700ms',
+        '1000': '1000ms',
+      },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },

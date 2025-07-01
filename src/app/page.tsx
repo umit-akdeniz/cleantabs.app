@@ -628,15 +628,34 @@ export default function Home() {
   if (status === 'loading') {
     return (
       <div className="h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="w-12 h-12 border-3 border-slate-200 dark:border-slate-700 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
-            <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+        <div className="text-center space-y-6 flex flex-col items-center">
+          <div className="flex justify-center mb-4">
+            <Logo size="2xl" showText={true} />
           </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-medium text-slate-900 dark:text-slate-100">
-              CleanTabs
-            </h3>
+          <div className="flex justify-center">
+            {/* Modern animated rings */}
+            <div className="relative w-20 h-20">
+              <div className="absolute inset-0 border-4 border-slate-200 dark:border-slate-700 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-2 border-2 border-transparent border-t-indigo-400 rounded-full animate-spin" style={{animationDelay: '150ms'}}></div>
+              <div className="absolute inset-4 border-2 border-transparent border-t-blue-300 rounded-full animate-spin" style={{animationDelay: '300ms'}}></div>
+              
+              {/* Modern logo icon in center */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <div className="flex gap-0.5">
+                    <div className="w-1 h-4 bg-white rounded-full opacity-90"></div>
+                    <div className="w-1 h-4 bg-white rounded-full opacity-70"></div>
+                    <div className="w-1 h-4 bg-white rounded-full opacity-50"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Yükleniyor...
+            </p>
           </div>
         </div>
       </div>

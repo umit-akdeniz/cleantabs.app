@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   showText?: boolean;
   className?: string;
   onClick?: () => void;
@@ -12,14 +12,16 @@ export default function Logo({ size = 'md', showText = true, className = '', onC
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
     lg: 'w-6 h-6',
-    xl: 'w-7 h-7'
+    xl: 'w-7 h-7',
+    '2xl': 'w-10 h-10'
   };
 
   const textSizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
     lg: 'text-lg',
-    xl: 'text-xl'
+    xl: 'text-xl',
+    '2xl': 'text-3xl'
   };
 
   return (
@@ -29,13 +31,13 @@ export default function Logo({ size = 'md', showText = true, className = '', onC
     >
       {/* Minimalist 3-Panel Logo */}
       <div className="relative">
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-2 rounded-xl shadow-lg">
+        <div className={`bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg ${size === '2xl' ? 'p-4' : 'p-2'}`}>
           <div className="relative">
             {/* Three vertical panels representing the 3-panel layout */}
             <div className="flex gap-0.5">
-              <div className="w-1.5 h-4 bg-white rounded-full opacity-90"></div>
-              <div className="w-1.5 h-4 bg-white rounded-full opacity-70"></div>
-              <div className="w-1.5 h-4 bg-white rounded-full opacity-50"></div>
+              <div className={`bg-white rounded-full opacity-90 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
+              <div className={`bg-white rounded-full opacity-70 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
+              <div className={`bg-white rounded-full opacity-50 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
             </div>
           </div>
         </div>
@@ -46,8 +48,8 @@ export default function Logo({ size = 'md', showText = true, className = '', onC
           <h1 className={`${textSizeClasses[size]} font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight`}>
             CleanTabs
           </h1>
-          {size === 'xl' && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 -mt-1">
+          {(size === 'xl' || size === '2xl') && (
+            <p className={`text-slate-500 dark:text-slate-400 -mt-1 ${size === '2xl' ? 'text-sm' : 'text-xs'}`}>
               Organize • Simplify • Flow
             </p>
           )}

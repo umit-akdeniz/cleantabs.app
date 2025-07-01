@@ -6,6 +6,7 @@ import { Plus, Settings, Search, Filter, ChevronRight, FolderOpen, Globe, Clock,
 import MobileLayoutNew from './MobileLayoutNew';
 import CreativeIcon from './CreativeIcon';
 import ClientOnly from './ClientOnly';
+import CategoryManagementModal from './CategoryManagementModal';
 
 interface ModernThreePanelSidebarProps {
   categories: Category[];
@@ -56,6 +57,8 @@ export default function ModernThreePanelSidebar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{type: 'subcategory' | 'site', id: string} | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<{type: 'category' | 'subcategory', id: string} | null>(null);
+  const [showCategoryManagement, setShowCategoryManagement] = useState(false);
+  const [selectedCategoryForSubcategory, setSelectedCategoryForSubcategory] = useState<string | null>(null);
 
   const selectedCategoryData = categories.find(c => c.id === selectedCategory);
   const selectedSubcategoryData = selectedCategoryData?.subcategories.find(s => s.id === selectedSubcategory);
@@ -65,6 +68,11 @@ export default function ModernThreePanelSidebar({
     setSearchQuery(query);
     setShowSearchResults(query.length > 0);
     onSearch(query);
+  };
+
+  const handleAddSubcategory = (categoryId: string) => {
+    setSelectedCategoryForSubcategory(categoryId);
+    setShowCategoryManagement(true);
   };
 
   // Filter sites based on search query
@@ -169,10 +177,10 @@ export default function ModernThreePanelSidebar({
       {/* Tablet & Desktop Layout - Three Panels */}
       <div className="hidden md:flex h-full flex-none">
         {/* Panel 1: Categories */}
-        <div className="w-64 lg:w-80 border-r border-brand-200/20 dark:border-brand-700/30 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle max-h-full">
+        <div className="w-56 md:w-64 lg:w-80 border-r border-brand-200/20 dark:border-brand-700/30 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle max-h-full">
           {/* Header */}
           <div className="h-20 p-4 border-b border-brand-200/30 dark:border-brand-700/50 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Categories</h2>
+            <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Kategoriler</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenCategoryModal}
@@ -229,9 +237,23 @@ export default function ModernThreePanelSidebar({
                       {category.subcategories?.length || 0} subcategories
                     </div>
                   </div>
-                  <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${
-                    selectedCategory === category.id ? 'rotate-90' : ''
-                  }`} />
+                  <div className="flex items-center gap-1">
+                    {(!category.subcategories || category.subcategories.length === 0) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddSubcategory(category.id);
+                        }}
+                        className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded transition-colors"
+                        title="Add subcategory"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    )}
+                    <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${
+                      selectedCategory === category.id ? 'rotate-90' : ''
+                    }`} />
+                  </div>
                 </button>
               ))}
             </div>
@@ -239,74 +261,95 @@ export default function ModernThreePanelSidebar({
         </div>
 
         {/* Panel 2: Subcategories */}
-        <div className="w-64 lg:w-80 border-r border-brand-200/20 dark:border-brand-700/30 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle flex max-h-full">
+        <div className="w-56 md:w-64 lg:w-80 border-r border-brand-200/20 dark:border-brand-700/30 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle max-h-full">
           {/* Header */}
-          <div className="h-20 p-4 border-b border-brand-200/30 dark:border-brand-700/50 flex items-center">
+          <div className="h-20 p-4 border-b border-brand-200/30 dark:border-brand-700/50 flex items-center justify-between">
             {selectedCategoryData ? (
               <div>
-                <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">
-                  {selectedCategoryData.name}
+                <h2 className="text-base font-medium text-brand-900 dark:text-brand-100">
+                  Alt Kategoriler
                 </h2>
                 <p className="text-xs text-brand-500 dark:text-brand-400">
-                  Choose a subcategory
+                  {selectedCategoryData.name}
                 </p>
               </div>
             ) : (
               <div>
-                <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Subcategories</h2>
-                <p className="text-xs text-brand-500 dark:text-brand-400">Select a category to view subcategories</p>
+                <h2 className="text-base font-medium text-brand-900 dark:text-brand-100">Alt Kategoriler</h2>
+                <p className="text-xs text-brand-500 dark:text-brand-400">Kategori seçin</p>
               </div>
+            )}
+            {selectedCategoryData && (
+              <button
+                onClick={() => handleAddSubcategory(selectedCategoryData.id)}
+                className="p-2 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-800 rounded-lg transition-all duration-200 shadow-subtle"
+                title="Add Subcategory"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             )}
           </div>
 
           {/* Subcategories List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
             {selectedCategoryData ? (
-              <div className="space-y-2">
-                {selectedCategoryData.subcategories.map((subcategory) => {
-                  const sitesCount = sites.filter(site => site.subcategoryId === subcategory.id).length;
-                  return (
-                    <button
-                      key={subcategory.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, 'subcategory', subcategory.id)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, 'subcategory', subcategory.id)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, 'subcategory', subcategory.id)}
-                      onClick={() => onSubcategorySelect(subcategory.id)}
-                      className={`w-full p-2.5 rounded-lg text-left transition-all duration-200 ease-in-out flex items-center gap-2 group relative ${
-                        selectedSubcategory === subcategory.id
-                          ? 'bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300 shadow-sm'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'
-                      } ${
-                        draggedItem?.type === 'subcategory' && draggedItem.id === subcategory.id
-                          ? 'opacity-50 drag-ghost'
-                          : ''
-                      } ${
-                        dragOverTarget?.type === 'subcategory' && dragOverTarget.id === subcategory.id
-                          ? 'ring-2 ring-accent-500 bg-accent-100 dark:bg-accent-900/50 drag-over-target'
-                          : ''
-                      }`}
-                    >
-                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full transition-all ${
-                        selectedSubcategory === subcategory.id
-                          ? 'bg-accent-500 dark:bg-accent-400'
-                          : 'bg-transparent'
-                      }`}></div>
-                      <div className="flex-1 ml-3">
-                        <div className="font-medium text-sm">{subcategory.name.charAt(0).toUpperCase() + subcategory.name.slice(1).toLowerCase()}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {sitesCount} sites
+              selectedCategoryData.subcategories.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedCategoryData.subcategories.map((subcategory) => {
+                    const sitesCount = sites.filter(site => site.subcategoryId === subcategory.id).length;
+                    return (
+                      <button
+                        key={subcategory.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, 'subcategory', subcategory.id)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, 'subcategory', subcategory.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, 'subcategory', subcategory.id)}
+                        onClick={() => onSubcategorySelect(subcategory.id)}
+                        className={`w-full p-2.5 rounded-lg text-left transition-all duration-200 ease-in-out flex items-center gap-2 group relative ${
+                          selectedSubcategory === subcategory.id
+                            ? 'bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-300 shadow-sm'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'
+                        } ${
+                          draggedItem?.type === 'subcategory' && draggedItem.id === subcategory.id
+                            ? 'opacity-50 drag-ghost'
+                            : ''
+                        } ${
+                          dragOverTarget?.type === 'subcategory' && dragOverTarget.id === subcategory.id
+                            ? 'ring-2 ring-accent-500 bg-accent-100 dark:bg-accent-900/50 drag-over-target'
+                            : ''
+                        }`}
+                      >
+                        <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full transition-all ${
+                          selectedSubcategory === subcategory.id
+                            ? 'bg-accent-500 dark:bg-accent-400'
+                            : 'bg-transparent'
+                        }`}></div>
+                        <div className="flex-1 ml-3">
+                          <div className="font-medium text-sm">{subcategory.name.charAt(0).toUpperCase() + subcategory.name.slice(1).toLowerCase()}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {sitesCount} sites
+                          </div>
                         </div>
-                      </div>
-                      <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${
-                        selectedSubcategory === subcategory.id ? 'rotate-90' : ''
-                      }`} />
-                    </button>
-                  );
-                })}
-              </div>
+                        <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${
+                          selectedSubcategory === subcategory.id ? 'rotate-90' : ''
+                        }`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                  <div className="w-12 h-12 bg-brand-100 dark:bg-brand-800 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <FolderOpen className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+                  </div>
+                  <p className="text-brand-500 dark:text-brand-400 mb-1 font-medium text-sm">Alt Kategori Yok</p>
+                  <p className="text-xs text-brand-400 dark:text-brand-500">
+                    Üst menüdeki + butonunu kullanarak alt kategori ekleyin
+                  </p>
+                </div>
+              )
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
                 <div className="w-12 h-12 bg-brand-100 dark:bg-brand-800 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -322,22 +365,22 @@ export default function ModernThreePanelSidebar({
         </div>
 
         {/* Panel 3: Sites */}
-        <div className="w-72 lg:w-96 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle hidden xl:flex max-h-full">
+        <div className="w-64 md:w-72 lg:w-96 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle hidden lg:flex max-h-full">
           {/* Header */}
           <div className="h-20 p-4 border-b border-brand-200/30 dark:border-brand-700/50 flex items-center">
             {selectedSubcategoryData ? (
               <div>
-                <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">
-                  {selectedSubcategoryData.name}
+                <h2 className="text-base font-normal text-brand-900 dark:text-brand-100">
+                  Siteler
                 </h2>
                 <p className="text-xs text-brand-500 dark:text-brand-400">
-                  {sitesInSubcategory.length} sites
+                  {selectedSubcategoryData.name} • {sitesInSubcategory.length} site
                 </p>
               </div>
             ) : (
               <div>
-                <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Sites</h2>
-                <p className="text-xs text-brand-500 dark:text-brand-400">Select a subcategory to view sites</p>
+                <h2 className="text-base font-normal text-brand-900 dark:text-brand-100">Siteler</h2>
+                <p className="text-xs text-brand-500 dark:text-brand-400">Alt kategori seçin</p>
               </div>
             )}
           </div>
@@ -418,6 +461,25 @@ export default function ModernThreePanelSidebar({
           </div>
         </div>
       </div>
+
+      {/* Category Management Modal */}
+      <CategoryManagementModal
+        isOpen={showCategoryManagement}
+        onClose={() => {
+          setShowCategoryManagement(false);
+          setSelectedCategoryForSubcategory(null);
+        }}
+        categories={categories}
+        onAddCategory={(name) => {
+          // This will be handled by parent component
+          console.log('Add category:', name);
+        }}
+        onAddSubcategory={(categoryId, name) => {
+          // This will be handled by parent component
+          console.log('Add subcategory:', categoryId, name);
+        }}
+        selectedCategoryId={selectedCategoryForSubcategory}
+      />
     </>
   );
 }
