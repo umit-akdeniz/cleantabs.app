@@ -7,26 +7,22 @@ import bcrypt from "bcryptjs"
 
 export const authOptions = {
   providers: [
-    // Only add OAuth providers if they are configured
+    // Google OAuth - production ready
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     })] : []),
+    // GitHub OAuth - production ready
     ...(process.env.GITHUB_ID && process.env.GITHUB_SECRET ? [GitHubProvider({
       clientId: process.env.GITHUB_ID,
       clientSecret: process.env.GITHUB_SECRET,
-    })] : []),
-    // Email provider - only add if configured
-    ...(process.env.EMAIL_SERVER_HOST ? [EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM,
     })] : []),
     CredentialsProvider({
       name: "credentials",
@@ -149,5 +145,12 @@ export const authOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+    signUp: '/auth/signup',
+    error: '/auth/error',
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
+  theme: {
+    colorScheme: "light" as const,
   }
 }

@@ -29,7 +29,7 @@ export default function SignUp() {
       });
 
       if (response.ok) {
-        router.push('/auth/signin?message=Account created successfully');
+        router.push('/auth/signin?message=Account created successfully&callbackUrl=/dashboard');
       } else {
         const data = await response.json();
         setError(data.error || 'Something went wrong');
@@ -47,14 +47,14 @@ export default function SignUp() {
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20 dark:border-slate-800/50">
           {/* Logo/Brand */}
           <div className="text-center mb-8">
-            <div className="mb-4">
+            <div className="mb-4 flex justify-center">
               <Logo size="xl" showText={true} />
             </div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
               Join CleanTabs
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm">
-              Start organizing your digital workspace today
+              Transform chaos into clarity. Start your organized journey.
             </p>
           </div>
 
@@ -62,20 +62,24 @@ export default function SignUp() {
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl border border-blue-200/50 dark:border-blue-800/30">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-blue-600" />
-              <h3 className="font-medium text-blue-900 dark:text-blue-100 text-sm">Free Plan Includes</h3>
+              <h3 className="font-medium text-blue-900 dark:text-blue-100 text-sm">What You Get Free</h3>
             </div>
             <ul className="space-y-2 text-xs text-blue-700 dark:text-blue-300">
               <li className="flex items-center gap-2">
                 <Check className="w-3 h-3 text-blue-600" />
-                Unlimited categories & sites
+                Unlimited site organization
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3 h-3 text-blue-600" />
-                Drag & drop organization
+                Intuitive 3-panel interface
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-3 h-3 text-blue-600" />
-                Clean, minimalist interface
+                Smart search & filtering
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="w-3 h-3 text-blue-600" />
+                Import your bookmarks
               </li>
             </ul>
           </div>
@@ -84,7 +88,7 @@ export default function SignUp() {
           <div className="space-y-3 mb-6">
             <button
               type="button"
-              onClick={() => signIn('google', { callbackUrl: '/' })}
+              onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
               className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-900 dark:text-slate-100 font-medium"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -98,7 +102,7 @@ export default function SignUp() {
             
             <button
               type="button"
-              onClick={() => signIn('github', { callbackUrl: '/' })}
+              onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
               className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-slate-900 dark:bg-slate-700 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors font-medium"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -208,18 +212,21 @@ export default function SignUp() {
 
           {/* Terms */}
           <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
-            By creating an account, you agree to our privacy policy and terms of service.
+            By joining CleanTabs, you agree to our{' '}
+            <Link href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">privacy policy</Link>{' '}
+            and{' '}
+            <Link href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline">terms of service</Link>.
           </p>
 
           {/* Sign In Link */}
           <div className="mt-6 text-center">
             <p className="text-slate-600 dark:text-slate-400 text-sm">
-              Already have an account?{' '}
+              Already part of CleanTabs?{' '}
               <Link
                 href="/auth/signin"
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
               >
-                Sign in here
+                Welcome back
               </Link>
             </p>
           </div>

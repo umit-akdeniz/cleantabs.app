@@ -51,13 +51,25 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Public routes
+        // Public routes that don't require authentication
+        if (req.nextUrl.pathname === '/') return true; // Landing page
         if (req.nextUrl.pathname.startsWith('/auth/')) return true;
         if (req.nextUrl.pathname.startsWith('/api/auth/')) return true;
         if (req.nextUrl.pathname.startsWith('/api/stripe/webhook')) return true;
         if (req.nextUrl.pathname === '/pricing') return true;
+        if (req.nextUrl.pathname === '/privacy') return true;
+        if (req.nextUrl.pathname === '/terms') return true;
+        if (req.nextUrl.pathname === '/blog') return true;
+        if (req.nextUrl.pathname.startsWith('/blog/')) return true;
+        if (req.nextUrl.pathname === '/import') return true;
+        if (req.nextUrl.pathname === '/showcase') return true;
+        if (req.nextUrl.pathname === '/api-docs') return true;
+        if (req.nextUrl.pathname === '/features') return true;
+        if (req.nextUrl.pathname === '/about') return true;
+        if (req.nextUrl.pathname === '/help') return true;
+        if (req.nextUrl.pathname.startsWith('/guides/')) return true;
         
-        // Protected routes require authentication
+        // Protected routes require authentication (dashboard, account, etc.)
         return !!token;
       },
     },

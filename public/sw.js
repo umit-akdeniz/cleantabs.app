@@ -1,13 +1,71 @@
-// Service Worker for SiteHub Pro notifications
+// Service Worker for CleanTabs PWA
+
+const CACHE_NAME = 'cleantabs-v1';
+const urlsToCache = [
+  '/',
+  '/dashboard',
+  '/manifest.json',
+  '/favicon.svg',
+  '/icon-192x192.png',
+];
 
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all([
+        ...cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        }),
+        self.clients.claim()
+      ]);
+    })
+  );
+});
+
+// Fetch event - serve from cache when offline
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests and chrome-extension requests
+  if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Return cached version or fetch from network
+        return response || fetch(event.request).then((fetchResponse) => {
+          // Cache successful responses
+          if (fetchResponse && fetchResponse.status === 200) {
+            const responseToCache = fetchResponse.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return fetchResponse;
+        });
+      })
+      .catch(() => {
+        // Fallback for navigation requests when offline
+        if (event.request.mode === 'navigate') {
+          return caches.match('/');
+        }
+      })
+  );
 });
 
 // Handle notification clicks

@@ -24,8 +24,10 @@ export default function Logo({ size = 'md', showText = true, className = '', onC
     '2xl': 'text-3xl'
   };
 
+  const Component = onClick ? 'button' : 'div';
+  
   return (
-    <button 
+    <Component 
       onClick={onClick}
       className={`flex items-center gap-3 hover:opacity-80 transition-opacity duration-200 ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
@@ -55,6 +57,6 @@ export default function Logo({ size = 'md', showText = true, className = '', onC
           )}
         </div>
       )}
-    </button>
+    </Component>
   );
 }

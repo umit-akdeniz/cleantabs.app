@@ -30,7 +30,8 @@ export default function SignIn() {
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        router.push('/');
+        const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl') || '/dashboard';
+        router.push(callbackUrl);
       }
     } catch (error) {
       setError('Something went wrong');
@@ -49,10 +50,10 @@ export default function SignIn() {
               <Logo size="xl" showText={true} />
             </div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              Welcome Back
+              Welcome to CleanTabs
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm">
-              Sign in to organize your digital space
+              Transform your digital chaos into organized clarity
             </p>
           </div>
 
@@ -60,7 +61,10 @@ export default function SignIn() {
           <div className="space-y-3 mb-6">
             <button
               type="button"
-              onClick={() => signIn('google', { callbackUrl: '/' })}
+              onClick={() => {
+                const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl') || '/dashboard';
+                signIn('google', { callbackUrl });
+              }}
               className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-900 dark:text-slate-100 font-medium"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -74,7 +78,10 @@ export default function SignIn() {
             
             <button
               type="button"
-              onClick={() => signIn('github', { callbackUrl: '/' })}
+              onClick={() => {
+                const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl') || '/dashboard';
+                signIn('github', { callbackUrl });
+              }}
               className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-slate-900 dark:bg-slate-700 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors font-medium"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -164,15 +171,15 @@ export default function SignIn() {
           </form>
 
           {/* Demo Account Info */}
-          <div className="mt-6 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/50 dark:border-blue-800/30 rounded-xl p-4">
-            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2 text-sm">
-              🎯 Demo Account
+          <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200/50 dark:border-blue-800/30 rounded-xl p-4">
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2 text-sm flex items-center gap-2">
+              🚀 Try CleanTabs Now
             </h3>
             <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-              Try the app with demo credentials:
+              Experience the power of organized browsing:
             </p>
             <div className="text-xs font-mono bg-blue-100/50 dark:bg-blue-900/20 p-3 rounded-lg space-y-1">
-              <div className="text-blue-800 dark:text-blue-200">Email: demo@cleantabs.com</div>
+              <div className="text-blue-800 dark:text-blue-200">Email: demo@cleantabs.app</div>
               <div className="text-blue-800 dark:text-blue-200">Password: demo123</div>
             </div>
           </div>
@@ -180,12 +187,12 @@ export default function SignIn() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-slate-600 dark:text-slate-400 text-sm">
-              Don't have an account?{' '}
+              New to CleanTabs?{' '}
               <Link
                 href="/auth/signup"
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
               >
-                Create one free
+                Start organizing today
               </Link>
             </p>
           </div>

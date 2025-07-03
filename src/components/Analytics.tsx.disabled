@@ -1,0 +1,103 @@
+'use client';
+
+import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+
+declare global {
+  interface Window {
+    gtag: (command: string, targetId: string, config?: object) => void;
+  }
+}
+
+interface AnalyticsProps {
+  gaId?: string;
+}
+
+export default function Analytics({ gaId }: AnalyticsProps) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (gaId && typeof window !== 'undefined') {
+      // Initialize Google Analytics
+      const script1 = document.createElement('script');
+      script1.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+      script1.async = true;
+      document.head.appendChild(script1);
+
+      const script2 = document.createElement('script');
+      script2.innerHTML = `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${gaId}', {
+          page_title: document.title,
+          page_location: window.location.href,
+        });
+      `;
+      document.head.appendChild(script2);
+
+      // Track Core Web Vitals
+      try {
+        import('web-vitals').then((webVitals) => {
+          const { getCLS, getFID, getFCP, getLCP, getTTFB } = webVitals;
+          getCLS((metric) => {
+            window.gtag('event', 'web_vitals', {
+              event_category: 'Web Vitals',
+              event_label: metric.name,
+              value: Math.round(metric.value * 1000),
+              custom_parameter_1: metric.rating,
+            });
+          });
+
+          getFID((metric) => {
+            window.gtag('event', 'web_vitals', {
+              event_category: 'Web Vitals',
+              event_label: metric.name,
+              value: Math.round(metric.value),
+              custom_parameter_1: metric.rating,
+            });
+          });
+
+          getFCP((metric) => {
+            window.gtag('event', 'web_vitals', {
+              event_category: 'Web Vitals',
+              event_label: metric.name,
+              value: Math.round(metric.value),
+              custom_parameter_1: metric.rating,
+            });
+          });
+
+          getLCP((metric) => {
+            window.gtag('event', 'web_vitals', {
+              event_category: 'Web Vitals',
+              event_label: metric.name,
+              value: Math.round(metric.value),
+              custom_parameter_1: metric.rating,
+            });
+          });
+
+          getTTFB((metric) => {
+            window.gtag('event', 'web_vitals', {
+              event_category: 'Web Vitals',
+              event_label: metric.name,
+              value: Math.round(metric.value),
+              custom_parameter_1: metric.rating,
+            });
+          });
+        }).catch(console.error);
+      } catch (error) {
+        console.error('Failed to load web-vitals:', error);
+      }
+    }
+  }, [gaId]);
+
+  useEffect(() => {
+    if (gaId && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('config', gaId, {
+        page_path: pathname,
+      });
+    }
+  }, [pathname, gaId]);
+
+  return null;
+}
