@@ -1,57 +1,68 @@
-import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
-import { handleDatabaseError, withDatabaseRetry } from '@/lib/api-utils';
+import { NextRequest } from 'next/server'
+import { AuthDatabase } from '@/lib/auth/database'
+import { AuthErrors, ValidationErrors } from '@/lib/errors/auth-errors'
+import { ErrorHandler } from '@/lib/errors/error-handler'
+import { validateEmail, validatePassword, validateName } from '@/lib/auth/utils'
+import { logAuthSuccess, logAuthFailure, logAuthError } from '@/lib/logger'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    console.log('Register API called');
-    const { name, email, password } = await request.json();
-    console.log('Received data:', { name, email });
+    const body = await request.json()
+    const { name, email, password } = body
 
-    // Database operations with improved error handling
-    return await withDatabaseRetry(async () => {
-      // Check if user already exists
-      console.log('Checking existing user...');
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
-      console.log('Existing user check complete');
+    logAuthSuccess('Register API called', undefined, { email })
 
-      if (existingUser) {
-        return NextResponse.json(
-          { error: 'User already exists with this email' },
-          { status: 400 }
-        );
-      }
+    // Validate input
+    if (!name || !email || !password) {
+      logAuthFailure('Missing required fields', email)
+      throw ValidationErrors.missingFields(['name', 'email', 'password'])
+    }
 
-      // Hash password
-      console.log('Hashing password...');
-      const hashedPassword = await bcrypt.hash(password, 12);
-      console.log('Password hashed');
+    if (!validateName(name)) {
+      logAuthFailure('Invalid name format', email)
+      throw ValidationErrors.invalidName()
+    }
 
-      // Create user
-      console.log('Creating user...');
-      const user = await prisma.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          plan: 'FREE',
-          emailVerified: new Date() // Auto-verify for simplicity
-        }
-      });
-      console.log('User created:', user.id);
+    if (!validateEmail(email)) {
+      logAuthFailure('Invalid email format', email)
+      throw ValidationErrors.invalidEmail()
+    }
 
-      // Remove password from response
-      const { password: _, ...userWithoutSensitiveData } = user;
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid) {
+      logAuthFailure('Invalid password', email, { errors: passwordValidation.errors })
+      throw ValidationErrors.invalidPassword()
+    }
 
-      return NextResponse.json({
-        ...userWithoutSensitiveData,
-        message: 'Account created successfully!'
-      });
-    }, 'register user');
-  } catch (error: any) {
-    return handleDatabaseError(error, 'register');
+    // Check if user already exists
+    const authDb = AuthDatabase.getInstance()
+    const existingUser = await authDb.findUserByEmail(email)
+    
+    if (existingUser) {
+      logAuthFailure('User already exists', email)
+      throw AuthErrors.userAlreadyExists()
+    }
+
+    // Create user
+    const user = await authDb.createUser({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password: password,
+      plan: 'FREE'
+    })
+
+    logAuthSuccess('User created successfully', user.id, { email: user.email })
+
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user
+    
+    return Response.json({
+      user: userWithoutPassword,
+      message: 'Account created successfully!'
+    }, { status: 201 })
+
+  } catch (error) {
+    logAuthError('Registration failed', error as Error)
+    return ErrorHandler.handle(error, 'REGISTER')
   }
 }

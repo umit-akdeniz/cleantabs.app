@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Suspense } from 'react';
 import Logo from '@/components/Logo';
-import { clearAllStorageData } from '@/lib/auth-utils';
+import { clearAllStorageData } from '@/lib/auth/utils';
 
 function SignInContent() {
   const [email, setEmail] = useState('');

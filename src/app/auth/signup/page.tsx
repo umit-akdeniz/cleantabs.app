@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { safeFetch } from '@/lib/api-client';
-import { clearAllStorageData } from '@/lib/auth-utils';
+import { clearAllStorageData } from '@/lib/auth/utils';
 
 export default function SignUp() {
   const [name, setName] = useState('');

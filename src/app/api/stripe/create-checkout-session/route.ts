@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       priceId,
       successUrl: `${baseUrl}/account?success=true`,
       cancelUrl: `${baseUrl}/account?canceled=true`,
-      customerEmail: session.user.email,
+      customerEmail: session.user.email || '',
       userId: session.user.id,
     });
 

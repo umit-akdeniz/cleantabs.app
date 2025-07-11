@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { performCompleteSignOut, initializeUserSession, validateSession } from '@/lib/auth-utils';
+import { performCompleteSignOut, initializeUserSession, validateSession } from '@/lib/auth/utils';
 import { Site } from '@/types';
 import { useDatabase } from '@/hooks/useDatabase';
 // Dynamic imports to prevent hydration issues
@@ -50,7 +50,7 @@ export default function Home() {
   const router = useRouter();
   const { categories, sites: dbSites, loading, error, refreshData, refreshCategories } = useDatabase();
 
-  // Session validation - çıkış yap eğer session geçersizse
+  // Basit session validation
   useEffect(() => {
     if (status === 'loading') return;
 
@@ -59,23 +59,9 @@ export default function Home() {
       return;
     }
 
-    // Session var ama user bilgileri eksikse çıkış yap
-    if (session && (!session.user || !session.user.email)) {
-      console.log('Invalid session detected, signing out');
-      performCompleteSignOut('/auth/signin');
-      return;
-    }
-
     // Session geçerliyse kullanıcı bilgilerini initialize et
     if (session?.user && status === 'authenticated') {
       initializeUserSession(session.user);
-    }
-
-    // Local storage session validation
-    if (session && !validateSession()) {
-      console.log('Local session invalid, signing out');
-      performCompleteSignOut('/auth/signin');
-      return;
     }
   }, [session, status, router]);
   const [sites, setSites] = useState<Site[]>([]);
