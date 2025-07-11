@@ -2,6 +2,17 @@ import Link from 'next/link';
 import { ArrowRight, Zap, Layout, Search, Import, Shield, Smartphone, Globe, Users, Code, Database, Cloud } from 'lucide-react';
 import AdvancedNav from '@/components/AdvancedNav';
 import LandingFooter from '@/components/LandingFooter';
+import { generateSEO } from '@/lib/seo';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  ...generateSEO({
+    title: "CleanTabs Features - Complete Bookmark Organization Solution",
+    description: "Discover CleanTabs' powerful features: 3-panel interface, smart search, universal import, auto-organization, privacy-first design, and cross-device sync. Transform your digital chaos into organized clarity.",
+    keywords: ['bookmark features', 'digital organization features', 'productivity tools', 'bookmark manager features', 'clean interface', 'smart search', 'bookmark import', 'privacy-first bookmarks', 'cross-device sync', 'bookmark organization tools'],
+    canonical: '/features',
+  }),
+};
 
 const coreFeatures = [
   {
@@ -275,26 +286,26 @@ export default function FeaturesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-500 to-indigo-600">
+      <section className="py-16 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-800 dark:to-slate-950">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Experience All Features?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-300 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
             Start your journey to organized digital life. All core features 
             are free forever, with advanced features coming soon.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth/signup"
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
+              className="bg-blue-600 dark:bg-blue-700 text-white px-8 py-4 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
             >
               Get Started Free
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
               href="/import"
-              className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 transition-all font-semibold"
+              className="border-2 border-slate-300 dark:border-slate-600 text-slate-300 dark:text-slate-400 px-8 py-4 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-800 transition-all font-semibold"
             >
               Import Your Bookmarks
             </Link>

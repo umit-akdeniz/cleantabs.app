@@ -15,7 +15,6 @@ export async function POST(request: Request) {
 
     const subcategory = await prisma.subcategory.create({
       data: {
-        id: generateId('sub'),
         name,
         icon,
         categoryId

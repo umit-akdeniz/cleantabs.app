@@ -86,7 +86,6 @@ export async function POST(request: Request) {
 
     const site = await prisma.site.create({
       data: {
-        id: generateId('site'),
         name,
         url,
         description,

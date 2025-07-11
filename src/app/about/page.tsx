@@ -2,6 +2,17 @@ import Link from 'next/link';
 import { ArrowRight, Users, Target, Heart, Lightbulb, Globe, Shield } from 'lucide-react';
 import AdvancedNav from '@/components/AdvancedNav';
 import LandingFooter from '@/components/LandingFooter';
+import { generateSEO } from '@/lib/seo';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  ...generateSEO({
+    title: "About CleanTabs - Building the Future of Digital Organization",
+    description: "Learn about CleanTabs' mission to transform digital organization. Meet our team, discover our values, and see how we're helping 10,000+ users organize their digital lives with elegant, privacy-first tools.",
+    keywords: ['about cleantabs', 'digital organization company', 'bookmark manager team', 'privacy-first technology', 'user-centered design', 'digital workspace solutions', 'productivity startup', 'clean technology'],
+    canonical: '/about',
+  }),
+};
 
 const team = [
   {
@@ -104,7 +115,7 @@ export default function AboutPage() {
           
           <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8">
             CleanTabs was born from a simple frustration: why is organizing our digital lives 
-            so chaotic when the tools should make it effortless? We're here to change that.
+            so chaotic when the tools should make it effortless? We&apos;re here to change that.
           </p>
         </div>
       </section>
@@ -121,14 +132,14 @@ export default function AboutPage() {
               
               <p className="text-lg text-slate-600 dark:text-slate-300 mb-6">
                 To transform the way people organize and interact with their digital content. 
-                We believe that good organization shouldn't require constant maintenance or 
+                We believe that good organization shouldn&apos;t require constant maintenance or 
                 complex systems—it should just work.
               </p>
               
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Every day, millions of people lose valuable time searching through disorganized 
                 bookmarks, struggling with outdated interfaces, or abandoning organization 
-                altogether. We're building CleanTabs to solve this universal problem with 
+                altogether. We&apos;re building CleanTabs to solve this universal problem with 
                 elegant design and intelligent automation.
               </p>
               
@@ -263,26 +274,26 @@ export default function AboutPage() {
       </section>
 
       {/* Future */}
-      <section className="py-16 bg-gradient-to-r from-blue-500 to-indigo-600">
+      <section className="py-16 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-800 dark:to-slate-950">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">
-            What's Next?
+            What&apos;s Next?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            We're just getting started. Mobile apps, team collaboration, advanced analytics, 
+          <p className="text-xl text-slate-300 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
+            We&apos;re just getting started. Mobile apps, team collaboration, advanced analytics, 
             and more exciting features are on the horizon.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth/signup"
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
+              className="bg-blue-600 dark:bg-blue-700 text-white px-8 py-4 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
             >
               Join Our Journey
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
               href="/blog"
-              className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 transition-all font-semibold"
+              className="border-2 border-slate-300 dark:border-slate-600 text-slate-300 dark:text-slate-400 px-8 py-4 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-800 transition-all font-semibold"
             >
               Read Our Blog
             </Link>

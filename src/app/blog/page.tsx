@@ -6,79 +6,137 @@ import LandingFooter from '@/components/LandingFooter';
 const blogPosts = [
   {
     id: 1,
-    title: "The Future of Digital Organization: Why CleanTabs Matters",
-    excerpt: "In a world drowning in digital chaos, CleanTabs emerges as the solution for modern professionals who value organization and efficiency.",
-    content: "Detailed analysis of digital organization trends...",
-    author: "Sarah Chen",
-    date: "2024-01-15",
+    title: "Chrome Bookmarks Import Guide: Transfer Your Bookmarks to CleanTabs in 3 Steps",
+    excerpt: "Complete step-by-step guide to importing Chrome bookmarks into CleanTabs. Learn how to export, sync, and organize your bookmarks efficiently.",
+    content: "Detailed Chrome bookmark import tutorial with screenshots and troubleshooting tips...",
+    author: "Umit Akdeniz",
+    date: "2024-01-20",
     readTime: "8 min read",
-    category: "Product",
-    tags: ["organization", "productivity", "digital-workspace"],
-    featured: true
+    category: "Guide",
+    tags: ["chrome-bookmarks", "import", "bookmark-sync", "browser-migration"],
+    featured: true,
+    slug: "chrome-bookmarks-import-guide"
   },
   {
     id: 2,
-    title: "API Integration Guide: Building with CleanTabs",
-    excerpt: "Learn how to integrate CleanTabs API into your applications for seamless bookmark management and data organization.",
-    content: "Step-by-step integration guide...",
-    author: "Mike Rodriguez",
-    date: "2024-01-10",
-    readTime: "12 min read",
-    category: "Developer",
-    tags: ["api", "integration", "development"],
-    featured: false
+    title: "Firefox Bookmark Manager vs CleanTabs: Why Digital Organization Matters",
+    excerpt: "Compare Firefox's built-in bookmark manager with CleanTabs' advanced organization features. Discover the benefits of modern bookmark management.",
+    content: "Detailed comparison of Firefox bookmarks vs CleanTabs features...",
+    author: "Umit Akdeniz",
+    date: "2024-01-18",
+    readTime: "10 min read",
+    category: "Comparison",
+    tags: ["firefox-bookmarks", "digital-organization", "bookmark-manager", "productivity"],
+    featured: false,
+    slug: "firefox-vs-cleantabs-comparison"
   },
   {
     id: 3,
-    title: "Migrating from Traditional Bookmark Managers",
-    excerpt: "Complete guide to importing your bookmarks from Chrome, Firefox, Safari, and other bookmark managers into CleanTabs.",
-    content: "Migration strategies and best practices...",
-    author: "Emma Thompson",
-    date: "2024-01-08",
-    readTime: "6 min read",
+    title: "Safari Bookmark Sync: Complete Migration Guide for Mac Users",
+    excerpt: "Learn how to export Safari bookmarks and sync them with CleanTabs for better organization across all your devices.",
+    content: "Safari bookmark export and sync tutorial for Mac users...",
+    author: "Umit Akdeniz",
+    date: "2024-01-16",
+    readTime: "7 min read",
     category: "Guide",
-    tags: ["migration", "import", "bookmarks"],
-    featured: false
+    tags: ["safari-bookmarks", "mac-bookmarks", "cross-device-sync", "apple-migration"],
+    featured: false,
+    slug: "safari-bookmark-sync-guide"
   },
   {
     id: 4,
-    title: "Mobile vs Desktop: The CleanTabs Experience",
-    excerpt: "How CleanTabs adapts to different devices and screen sizes while maintaining functionality and ease of use.",
-    content: "Cross-platform experience analysis...",
-    author: "David Kim",
-    date: "2024-01-05",
-    readTime: "5 min read",
-    category: "Design",
-    tags: ["mobile", "responsive", "ux"],
-    featured: false
+    title: "The Science Behind Note-Taking: How CleanTabs Reduces Cognitive Load",
+    excerpt: "Discover the psychological benefits of organized note-taking and how CleanTabs' 3-panel interface reduces mental fatigue and improves focus.",
+    content: "Scientific research on note-taking effectiveness and cognitive psychology...",
+    author: "Umit Akdeniz",
+    date: "2024-01-14",
+    readTime: "12 min read",
+    category: "Psychology",
+    tags: ["note-taking", "cognitive-load", "brain-science", "productivity-psychology"],
+    featured: false,
+    slug: "science-note-taking-cognitive-load"
   },
   {
     id: 5,
-    title: "Enterprise Data Management with CleanTabs API",
-    excerpt: "How large organizations can leverage CleanTabs API for enterprise-level bookmark and data management solutions.",
-    content: "Enterprise use cases and implementation...",
-    author: "Alex Johnson",
-    date: "2024-01-03",
-    readTime: "10 min read",
-    category: "Enterprise",
-    tags: ["enterprise", "api", "data-management"],
-    featured: false
+    title: "Edge Bookmarks Transfer: Microsoft to CleanTabs Migration Tutorial",
+    excerpt: "Step-by-step guide to exporting Microsoft Edge bookmarks and importing them into CleanTabs for better organization.",
+    content: "Complete Edge bookmark migration tutorial with troubleshooting...",
+    author: "Umit Akdeniz",
+    date: "2024-01-12",
+    readTime: "6 min read",
+    category: "Guide",
+    tags: ["edge-bookmarks", "microsoft-edge", "bookmark-export", "windows-migration"],
+    featured: false,
+    slug: "edge-bookmarks-transfer-guide"
   },
   {
     id: 6,
-    title: "Privacy-First Design: How CleanTabs Protects Your Data",
-    excerpt: "Deep dive into CleanTabs' privacy architecture and security measures that keep your organized data safe.",
-    content: "Security and privacy technical details...",
-    author: "Lisa Park",
-    date: "2024-01-01",
-    readTime: "7 min read",
-    category: "Security",
-    tags: ["privacy", "security", "data-protection"],
-    featured: false
+    title: "Digital Minimalism: How CleanTabs Promotes Mindful Web Browsing",
+    excerpt: "Explore the benefits of digital minimalism and how CleanTabs' clean interface promotes mindful browsing habits and reduces digital clutter.",
+    content: "Digital minimalism principles and CleanTabs' design philosophy...",
+    author: "Umit Akdeniz",
+    date: "2024-01-10",
+    readTime: "9 min read",
+    category: "Lifestyle",
+    tags: ["digital-minimalism", "mindful-browsing", "digital-detox", "clean-interface"],
+    featured: false,
+    slug: "digital-minimalism-mindful-browsing"
+  },
+  {
+    id: 7,
+    title: "Cross-Browser Bookmark Synchronization: The Complete 2024 Guide",
+    excerpt: "Learn how to sync bookmarks across Chrome, Firefox, Safari, and Edge using CleanTabs as your central bookmark management hub.",
+    content: "Complete cross-browser synchronization guide with tips and tricks...",
+    author: "Umit Akdeniz",
+    date: "2024-01-08",
+    readTime: "11 min read",
+    category: "Guide",
+    tags: ["cross-browser-sync", "bookmark-synchronization", "multi-browser", "universal-bookmarks"],
+    featured: false,
+    slug: "cross-browser-bookmark-sync-guide"
+  },
+  {
+    id: 8,
+    title: "Memory Palace Technique: Transform Your Bookmarks Into a Digital Memory System",
+    excerpt: "Apply the ancient memory palace technique to your digital bookmarks using CleanTabs' organizational features for better information retention.",
+    content: "Memory palace technique applied to digital bookmark organization...",
+    author: "Dr. Sarah Chen",
+    date: "2024-01-06",
+    readTime: "13 min read",
+    category: "Psychology",
+    tags: ["memory-palace", "information-retention", "cognitive-techniques", "digital-memory"],
+    featured: false,
+    slug: "memory-palace-digital-bookmarks"
+  },
+  {
+    id: 9,
+    title: "Productivity Hacks: 10 Ways CleanTabs Boosts Your Daily Workflow",
+    excerpt: "Discover proven productivity techniques and workflow optimizations using CleanTabs' advanced features for maximum efficiency.",
+    content: "Productivity tips and workflow optimization strategies...",
+    author: "Umit Akdeniz",
+    date: "2024-01-04",
+    readTime: "8 min read",
+    category: "Productivity",
+    tags: ["productivity-hacks", "workflow-optimization", "time-management", "efficiency-tips"],
+    featured: false,
+    slug: "productivity-hacks-cleantabs-workflow"
+  },
+  {
+    id: 10,
+    title: "The Psychology of Digital Hoarding: Why Organized Bookmarks Improve Mental Health",
+    excerpt: "Understand the psychological impact of digital clutter and how CleanTabs' organization system promotes better mental health and focus.",
+    content: "Psychology of digital hoarding and mental health benefits of organization...",
+    author: "Umit Akdeniz",
+    date: "2024-01-02",
+    readTime: "10 min read",
+    category: "Psychology",
+    tags: ["digital-hoarding", "mental-health", "digital-wellness", "organization-psychology"],
+    featured: false,
+    slug: "psychology-digital-hoarding-mental-health"
   }
 ];
 
-const categories = ["All", "Product", "Developer", "Guide", "Design", "Enterprise", "Security"];
+const categories = ["All", "Guide", "Psychology", "Productivity", "Comparison", "Lifestyle"];
 
 export default function BlogPage() {
   const featuredPost = blogPosts.find(post => post.featured);
@@ -139,7 +197,7 @@ export default function BlogPage() {
                 </div>
                 
                 <Link 
-                  href={`/blog/${featuredPost.id}`}
+                  href={`/blog/${featuredPost.slug}`}
                   className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
                 >
                   Read More
@@ -201,7 +259,7 @@ export default function BlogPage() {
                     </div>
                     
                     <Link 
-                      href={`/blog/${post.id}`}
+                      href={`/blog/${post.slug}`}
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors"
                     >
                       Read More

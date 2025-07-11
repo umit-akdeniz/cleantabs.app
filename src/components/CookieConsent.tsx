@@ -52,7 +52,7 @@ export default function CookieConsent() {
                 <div>
                   <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
                     We use cookies to enhance your experience, analyze site traffic, and personalize content. 
-                    By clicking "Accept All", you consent to our use of cookies.
+                    By clicking &quot;Accept All&quot;, you consent to our use of cookies.
                   </p>
                   
                   <div className="flex flex-wrap gap-3">

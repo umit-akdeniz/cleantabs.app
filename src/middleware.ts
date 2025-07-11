@@ -3,6 +3,13 @@ import { NextResponse } from "next/server"
 
 export default withAuth(
   function middleware(req) {
+    const { token } = req.nextauth;
+    
+    // Redirect authenticated users away from auth pages
+    if (token && (req.nextUrl.pathname === '/auth/signin' || req.nextUrl.pathname === '/auth/signup')) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+    
     const response = NextResponse.next();
     
     // Security Headers - Production Ready
@@ -23,14 +30,14 @@ export default withAuth(
     // Content Security Policy - Secure but functional
     response.headers.set(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com checkout.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: *.googleapis.com *.gstatic.com; font-src 'self' data: fonts.googleapis.com fonts.gstatic.com; connect-src 'self' api.stripe.com checkout.stripe.com *.google.com *.github.com;"
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com checkout.stripe.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: *.googleapis.com *.gstatic.com *.github.com; font-src 'self' data: fonts.googleapis.com fonts.gstatic.com; connect-src 'self' api.stripe.com checkout.stripe.com *.google.com *.github.com *.githubusercontent.com https://www.google-analytics.com;"
     );
 
     // Rate limiting için basic protection
     const userAgent = req.headers.get('user-agent') || '';
     
     // Enhanced Bot protection - Allow legitimate bots
-    const maliciousBots = ['scrapy', 'curl', 'wget', 'python-requests'];
+    const maliciousBots = ['scrapy', 'wget', 'python-requests'];
     if (maliciousBots.some(bot => userAgent.toLowerCase().includes(bot))) {
       return new NextResponse('Access denied', { status: 403 });
     }
@@ -40,8 +47,8 @@ export default withAuth(
       const origin = req.headers.get('origin');
       const host = req.headers.get('host');
       
-      // CSRF protection - mais flexible pour Stripe webhooks
-      if (req.method !== 'GET' && !req.nextUrl.pathname.includes('/webhook') && origin && !origin.includes(host!)) {
+      // CSRF protection - mais flexible pour Stripe webhooks et signup
+      if (req.method !== 'GET' && !req.nextUrl.pathname.includes('/webhook') && !req.nextUrl.pathname.includes('/signup') && origin && !origin.includes(host!)) {
         return new NextResponse('CSRF protection', { status: 403 });
       }
     }
@@ -55,6 +62,7 @@ export default withAuth(
         if (req.nextUrl.pathname === '/') return true; // Landing page
         if (req.nextUrl.pathname.startsWith('/auth/')) return true;
         if (req.nextUrl.pathname.startsWith('/api/auth/')) return true;
+        if (req.nextUrl.pathname === '/api/register') return true;
         if (req.nextUrl.pathname.startsWith('/api/stripe/webhook')) return true;
         if (req.nextUrl.pathname === '/pricing') return true;
         if (req.nextUrl.pathname === '/privacy') return true;
@@ -69,8 +77,24 @@ export default withAuth(
         if (req.nextUrl.pathname === '/help') return true;
         if (req.nextUrl.pathname.startsWith('/guides/')) return true;
         
+        // Admin routes - require admin email
+        if (req.nextUrl.pathname.startsWith('/secure-admin/') || 
+            req.nextUrl.pathname.startsWith('/api/admin/')) {
+          return token?.email === 'umitakdenizjob@gmail.com';
+        }
+        
         // Protected routes require authentication (dashboard, account, etc.)
-        return !!token;
+        if (!token) {
+          return false;
+        }
+        
+        // Token varsa ama geçersizse false döndür
+        if (token && (!token.email || !token.isValid)) {
+          console.log('Invalid token in middleware, redirecting to signin');
+          return false;
+        }
+        
+        return true;
       },
     },
   }

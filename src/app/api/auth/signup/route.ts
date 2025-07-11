@@ -32,11 +32,6 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
     console.log('Password hashed');
 
-    // Generate verification token
-    const verificationToken = crypto.randomUUID();
-    const verificationExpiry = new Date();
-    verificationExpiry.setHours(verificationExpiry.getHours() + 24); // 24 hours
-
     // Create user
     console.log('Creating user...');
     const user = await prisma.user.create({
@@ -45,28 +40,17 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         plan: 'FREE',
-        verificationToken,
-        verificationTokenExpiry: verificationExpiry
+        emailVerified: new Date() // Auto-verify for simplicity
       }
     });
     console.log('User created:', user.id);
 
-    // Send verification email
-    try {
-      const { sendVerificationEmail } = await import('@/lib/email');
-      await sendVerificationEmail(email, verificationToken);
-      console.log('Verification email sent');
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail signup if email sending fails
-    }
-
-    // Remove password and sensitive data from response
-    const { password: _, verificationToken: __, verificationTokenExpiry: ___, ...userWithoutSensitiveData } = user;
+    // Remove password from response
+    const { password: _, ...userWithoutSensitiveData } = user;
 
     return NextResponse.json({
       ...userWithoutSensitiveData,
-      message: 'Account created successfully. Please check your email for verification.'
+      message: 'Account created successfully!'
     });
   } catch (error: any) {
     console.error('Signup error details:', error);

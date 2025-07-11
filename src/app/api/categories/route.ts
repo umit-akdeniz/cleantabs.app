@@ -117,7 +117,6 @@ export async function POST(request: Request) {
 
     const category = await prisma.category.create({
       data: {
-        id: generateId('cat'),
         name,
         icon,
         userId: user.id

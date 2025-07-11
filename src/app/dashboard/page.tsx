@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { performCompleteSignOut, initializeUserSession, validateSession } from '@/lib/auth-utils';
 import { Site } from '@/types';
 import { useDatabase } from '@/hooks/useDatabase';
 // Dynamic imports to prevent hydration issues
@@ -48,6 +49,35 @@ export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { categories, sites: dbSites, loading, error, refreshData, refreshCategories } = useDatabase();
+
+  // Session validation - çıkış yap eğer session geçersizse
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (status === 'unauthenticated' || !session) {
+      router.push('/auth/signin');
+      return;
+    }
+
+    // Session var ama user bilgileri eksikse çıkış yap
+    if (session && (!session.user || !session.user.email)) {
+      console.log('Invalid session detected, signing out');
+      performCompleteSignOut('/auth/signin');
+      return;
+    }
+
+    // Session geçerliyse kullanıcı bilgilerini initialize et
+    if (session?.user && status === 'authenticated') {
+      initializeUserSession(session.user);
+    }
+
+    // Local storage session validation
+    if (session && !validateSession()) {
+      console.log('Local session invalid, signing out');
+      performCompleteSignOut('/auth/signin');
+      return;
+    }
+  }, [session, status, router]);
   const [sites, setSites] = useState<Site[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
@@ -187,7 +217,7 @@ export default function Home() {
         message: 'Site could not be saved. Please try again.'
       });
     }
-  }, [editingSite, selectedSite?.id, sites]);
+  }, [editingSite, selectedSite?.id]);
 
   const handleSiteUpdate = useCallback((updatedSite: Site) => {
     setSites(prevSites => prevSites.map(s => s.id === updatedSite.id ? updatedSite : s));
@@ -878,7 +908,7 @@ export default function Home() {
                 
                 <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
                   <button
-                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    onClick={() => performCompleteSignOut('/auth/signin')}
                     className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
                   >
                     <LogOut className="w-4 h-4" />

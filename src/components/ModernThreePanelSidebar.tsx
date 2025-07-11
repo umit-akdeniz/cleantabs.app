@@ -239,16 +239,16 @@ export default function ModernThreePanelSidebar({
                   </div>
                   <div className="flex items-center gap-1">
                     {(!category.subcategories || category.subcategories.length === 0) && (
-                      <button
+                      <div
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddSubcategory(category.id);
                         }}
-                        className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded transition-colors"
+                        className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded transition-colors cursor-pointer"
                         title="Add subcategory"
                       >
                         <Plus className="w-3 h-3" />
-                      </button>
+                      </div>
                     )}
                     <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${
                       selectedCategory === category.id ? 'rotate-90' : ''

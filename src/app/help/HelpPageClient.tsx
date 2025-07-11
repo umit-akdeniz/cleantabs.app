@@ -272,19 +272,19 @@ export default function HelpPageClient() {
             Still need help?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Can't find the answer you're looking for? Our support team is here to help 
+            Can&apos;t find the answer you&apos;re looking for? Our support team is here to help 
             you get the most out of CleanTabs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="mailto:support@cleantabs.app"
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-all shadow-lg font-semibold"
+              className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 px-8 py-4 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 transition-all shadow-lg font-semibold"
             >
               Contact Support
             </Link>
             <Link
               href="/about"
-              className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 transition-all font-semibold"
+              className="border-2 border-white dark:border-slate-300 text-white dark:text-slate-300 px-8 py-4 rounded-xl hover:bg-white/10 dark:hover:bg-slate-700/30 transition-all font-semibold"
             >
               About CleanTabs
             </Link>

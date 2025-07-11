@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Settings, Globe, Bell, Shield, Download, Crown } from 'lucide-react';
+import { ArrowLeft, Settings, Globe, Bell, Shield, Download, Crown, UserCog } from 'lucide-react';
 // import { useTheme } from 'next-themes';
 
 export default function SettingsPage() {
@@ -166,6 +166,25 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Admin Panel */}
+          {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <UserCog className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Administration</h2>
+              </div>
+              <div className="space-y-4">
+                <button 
+                  onClick={() => router.push('/dashboard-9f3b74bf7f89769bc4ce3b538f864dff916b85a11acb33c0756633441e089841')}
+                  className="w-full text-left p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                >
+                  <div className="font-medium text-purple-900 dark:text-purple-100">Admin Dashboard</div>
+                  <div className="text-sm text-purple-700 dark:text-purple-300">Access system administration panel</div>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Privacy & Security */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Download, Upload, Check, ArrowRight, Chrome, Bookmark, FileText, Globe, Monitor, Smartphone } from 'lucide-react';
-import SimpleNav from '@/components/SimpleNav';
+import AdvancedNav from '@/components/AdvancedNav';
 import LandingFooter from '@/components/LandingFooter';
 import { generateSEO } from '@/lib/seo';
 
@@ -72,7 +72,7 @@ const importStats = [
 export default function ImportPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
-      <SimpleNav />
+      <AdvancedNav />
       
       {/* Hero Section */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
@@ -137,7 +137,7 @@ export default function ImportPage() {
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
               CleanTabs supports all major browsers and bookmark services. 
-              No matter where your bookmarks live, we'll bring them home.
+              No matter where your bookmarks live, we&apos;ll bring them home.
             </p>
           </div>
 
@@ -280,26 +280,26 @@ export default function ImportPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-500 to-indigo-600">
+      <section className="py-16 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-800 dark:to-slate-950">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Import Your Bookmarks?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-300 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
             Join thousands of users who have successfully imported and organized 
             their digital collections with CleanTabs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth/signup"
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
+              className="bg-blue-600 dark:bg-blue-700 text-white px-8 py-4 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
             >
               Start Free Import
               <Upload className="w-5 h-5" />
             </Link>
             <Link
               href="/features"
-              className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 transition-all font-semibold"
+              className="border-2 border-slate-300 dark:border-slate-600 text-slate-300 dark:text-slate-400 px-8 py-4 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-800 transition-all font-semibold"
             >
               Learn More
             </Link>

@@ -1,29 +1,26 @@
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import GitHubProvider from "next-auth/providers/github"
-import EmailProvider from "next-auth/providers/email"
+// import { PrismaAdapter } from "@next-auth/prisma-adapter" // Not used with JWT strategy
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import type { NextAuthOptions } from "next-auth"
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  debug: process.env.NODE_ENV === 'development',
   providers: [
-    // Google OAuth - production ready
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
-        }
-      }
-    })] : []),
-    // GitHub OAuth - production ready
-    ...(process.env.GITHUB_ID && process.env.GITHUB_SECRET ? [GitHubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    })] : []),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -31,22 +28,20 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        try {
-          console.log('Auth attempt for:', credentials?.email);
-          
-          if (!credentials?.email || !credentials?.password) {
-            console.log('Missing credentials');
-            return null
-          }
+        console.log('Authorize called with:', { email: credentials?.email });
+        
+        if (!credentials?.email || !credentials?.password) {
+          console.log('Missing email or password');
+          return null
+        }
 
-          console.log('Looking up user in database...');
+        try {
+          console.log('Looking for user:', credentials.email);
           const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email
-            }
+            where: { email: credentials.email }
           })
-          
-          console.log('User found:', user ? 'Yes' : 'No');
+
+          console.log('User found:', user ? { id: user.id, email: user.email, hasPassword: !!user.password } : 'No user found');
 
           if (!user || !user.password) {
             console.log('User not found or no password');
@@ -58,99 +53,56 @@ export const authOptions = {
             credentials.password,
             user.password
           )
-          
+
           console.log('Password valid:', isPasswordValid);
 
           if (!isPasswordValid) {
+            console.log('Invalid password');
             return null
           }
 
-          console.log('Auth successful for user:', user.id);
-          return {
+          const returnUser = {
             id: user.id,
             email: user.email,
             name: user.name || undefined,
+            image: user.image || undefined,
             plan: user.plan,
-          }
-        } catch (error: any) {
+          };
+          
+          console.log('Returning user:', returnUser);
+          return returnUser;
+        } catch (error) {
           console.error('Auth error:', error);
-          return null;
+          return null
         }
       }
     })
   ],
-  session: {
-    strategy: "jwt" as const,
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
   callbacks: {
-    async signIn({ user, account, profile }: any) {
-      if (['google', 'github', 'email'].includes(account?.provider)) {
-        try {
-          // OAuth ile giriş yapan kullanıcıyı veritabanında bul veya oluştur
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email }
-          });
-
-          if (!existingUser) {
-            // Yeni kullanıcı oluştur
-            await prisma.user.create({
-              data: {
-                email: user.email,
-                name: user.name || user.email?.split('@')[0],
-                image: user.image,
-                plan: 'FREE',
-                emailVerified: account?.provider === 'email' ? new Date() : null
-              }
-            });
-          } else {
-            // Mevcut kullanıcı varsa image'ı güncelle
-            await prisma.user.update({
-              where: { email: user.email },
-              data: {
-                name: user.name,
-                image: user.image
-              }
-            });
-          }
-          return true;
-        } catch (error) {
-          console.error('OAuth sign-in error:', error);
-          return false;
-        }
-      }
-      return true;
-    },
-    async jwt({ token, user }: any) {
+    async jwt({ token, user, account }) {
+      console.log('JWT callback - token:', token?.email, 'user:', user?.email);
       if (user) {
-        token.plan = user.plan
-      } else if (token.email) {
-        // OAuth kullanıcıları için plan bilgisini veritabanından al
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email }
-        });
-        if (dbUser) {
-          token.plan = dbUser.plan;
-        }
+        token.id = user.id;
+        token.plan = user.plan;
+        token.email = user.email;
+        token.name = user.name;
       }
-      return token
+      return token;
     },
-    async session({ session, token }: any) {
-      if (token && token.sub) {
-        session.user.id = token.sub
-        session.user.plan = token.plan || 'FREE'
+    async session({ session, token }) {
+      console.log('Session callback - session:', session?.user?.email, 'token:', token?.email);
+      if (token && session.user) {
+        session.user.id = token.id as string || token.sub!;
+        session.user.plan = (token.plan as "FREE" | "PREMIUM") || "FREE";
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
       }
-      return session
+      return session;
     }
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
     error: '/auth/error',
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
-  theme: {
-    colorScheme: "light" as const,
-  }
 }

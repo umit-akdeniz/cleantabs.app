@@ -11,6 +11,7 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(session?.user?.name || '');
   const [email, setEmail] = useState(session?.user?.email || '');
+  const [loading, setLoading] = useState(false);
 
   const handleSave = () => {
     // Here you would typically save to your backend
@@ -22,6 +23,36 @@ export default function AccountPage() {
     setName(session?.user?.name || '');
     setEmail(session?.user?.email || '');
     setIsEditing(false);
+  };
+
+  const handleManageSubscription = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/stripe/customer-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Failed to access subscription management');
+      }
+    } catch (error) {
+      console.error('Error accessing customer portal:', error);
+      alert('Unable to access subscription management. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpgradeNow = () => {
+    router.push('/pricing');
+  };
+
+  const handleViewPricing = () => {
+    router.push('/pricing');
   };
 
   return (
@@ -191,32 +222,55 @@ export default function AccountPage() {
             <div className="grid md:grid-cols-3 gap-3">
               {session?.user?.plan === 'PREMIUM' ? (
                 <>
-                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                    <RefreshCcw className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Manage Subscription</span>
+                  <button 
+                    onClick={handleManageSubscription}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCcw className={`w-4 h-4 text-slate-600 dark:text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {loading ? 'Loading...' : 'Manage Subscription'}
+                    </span>
                   </button>
-                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <button 
+                    onClick={handleManageSubscription}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <Download className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Download Invoices</span>
                   </button>
-                  <button className="flex items-center justify-center gap-2 p-3 border border-red-200 dark:border-red-800 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  <button 
+                    onClick={handleManageSubscription}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 p-3 border border-red-200 dark:border-red-800 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <X className="w-4 h-4" />
                     <span className="text-sm font-medium">Cancel Subscription</span>
                   </button>
                 </>
               ) : (
                 <>
-                  <button className="flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                  <button 
+                    onClick={handleUpgradeNow}
+                    className="flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
                     <Crown className="w-4 h-4" />
                     <span className="text-sm font-medium">Upgrade to Premium</span>
                   </button>
-                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <button 
+                    onClick={handleViewPricing}
+                    className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
                     <CreditCard className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Pricing</span>
                   </button>
-                  <button className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <button 
+                    onClick={handleViewPricing}
+                    className="flex items-center justify-center gap-2 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
                     <Download className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Free Trial</span>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Plans</span>
                   </button>
                 </>
               )}

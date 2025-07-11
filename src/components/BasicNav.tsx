@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, Shield } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -16,7 +16,11 @@ export default function BasicNav() {
   const isAuthenticated = !!session;
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    setIsUserMenuOpen(false);
+    await signOut({ 
+      callbackUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://cleantabs.app',
+      redirect: true 
+    });
   };
 
   // Close user menu when clicking outside
@@ -75,6 +79,30 @@ export default function BasicNav() {
                   Dashboard
                 </Link>
                 
+                {/* Admin Button - Only for umitakdenizjob@gmail.com */}
+                {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/admin/generate-key', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        const data = await response.json();
+                        if (data.adminKey) {
+                          window.location.href = `/secure-admin/${data.adminKey}`;
+                        }
+                      } catch (error) {
+                        console.error('Admin key generation error:', error);
+                      }
+                    }}
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm font-medium flex items-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Administration
+                  </button>
+                )}
+                
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -84,19 +112,71 @@ export default function BasicNav() {
                   </button>
                   
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg py-1 z-50">
-                      <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-                        Account
-                      </Link>
-                      <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-                        Settings
-                      </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
+                      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700">
+                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {session?.user?.name || 'User'}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {session?.user?.email}
+                        </div>
+                      </div>
+                      
+                      <Link 
+                        href="/account" 
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
                       >
-                        Sign Out
-                      </button>
+                        <User className="w-4 h-4" />
+                        Account Settings
+                      </Link>
+                      
+                      <Link 
+                        href="/settings" 
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Preferences
+                      </Link>
+                      
+                      {/* Admin Menu Item - Only for admin user */}
+                      {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+                        <button 
+                          onClick={async () => {
+                            setIsUserMenuOpen(false);
+                            try {
+                              const response = await fetch('/api/admin/generate-key', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                              });
+                              const data = await response.json();
+                              if (data.adminKey) {
+                                window.location.href = `/secure-admin/${data.adminKey}`;
+                              }
+                            } catch (error) {
+                              console.error('Admin key generation error:', error);
+                            }
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors text-left"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Administration
+                        </button>
+                      )}
+                      
+                      <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2">
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -140,6 +220,28 @@ export default function BasicNav() {
                   <Link href="/dashboard" className="block px-3 py-2 bg-blue-500 text-white rounded-lg mx-3 text-center">Dashboard</Link>
                   <Link href="/account" className="block px-3 py-2 text-gray-600 dark:text-gray-300">Account</Link>
                   <Link href="/settings" className="block px-3 py-2 text-gray-600 dark:text-gray-300">Settings</Link>
+                  {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+                    <button 
+                      onClick={async () => {
+                        setIsMobileMenuOpen(false);
+                        try {
+                          const response = await fetch('/api/admin/generate-key', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                          const data = await response.json();
+                          if (data.adminKey) {
+                            window.location.href = `/secure-admin/${data.adminKey}`;
+                          }
+                        } catch (error) {
+                          console.error('Admin key generation error:', error);
+                        }
+                      }}
+                      className="block w-full text-left px-3 py-2 text-purple-600 dark:text-purple-400"
+                    >
+                      Administration
+                    </button>
+                  )}
                   <button
                     onClick={handleSignOut}
                     className="block w-full text-left px-3 py-2 text-red-600 dark:text-red-400"

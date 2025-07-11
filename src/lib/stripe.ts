@@ -47,6 +47,12 @@ export const createCheckoutSession = async ({
     },
     allow_promotion_codes: true,
     billing_address_collection: 'required',
+    automatic_tax: {
+      enabled: true,
+    },
+    // Support global payments
+    payment_method_configuration: undefined, // Uses account's default
+    currency: 'usd', // Global standard
   });
 
   return session;

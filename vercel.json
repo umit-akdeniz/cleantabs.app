@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "prisma generate && npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
@@ -28,6 +28,14 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
         }
       ]
     }
@@ -40,6 +48,13 @@
     {
       "source": "/robots.txt", 
       "destination": "/robots"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/www/:path*",
+      "destination": "/:path*",
+      "permanent": true
     }
   ]
 }

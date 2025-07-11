@@ -3,20 +3,21 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Category {
   id            String        @id @default(cuid())
   name          String
   icon          String?
-  userId        String
-  order         Int           @default(0)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  subcategories Subcategory[]
+  order         Int           @default(0)
+  userId        String
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategories Subcategory[]
 }
 
 model Subcategory {
@@ -24,9 +25,9 @@ model Subcategory {
   name       String
   icon       String?
   categoryId String
-  order      Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  order      Int      @default(0)
   sites      Site[]
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
@@ -43,9 +44,9 @@ model Site {
   lastChecked     DateTime?
   reminderEnabled Boolean     @default(false)
   subcategoryId   String
-  order           Int         @default(0)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  order           Int         @default(0)
   reminders       Reminder[]
   subcategory     Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
   subLinks        SubLink[]
@@ -68,24 +69,24 @@ model SubLink {
 }
 
 model User {
-  id                       String     @id @default(cuid())
-  name                     String?
-  email                    String     @unique
-  emailVerified            DateTime?
-  image                    String?
-  password                 String?
-  plan                     Plan       @default(FREE)
-  stripeCustomerId         String?    @unique
-  stripeSubscriptionId     String?    @unique
-  verificationToken        String?    @unique
-  verificationTokenExpiry  DateTime?
-  resetPasswordToken       String?    @unique
-  resetPasswordExpiry      DateTime?
-  createdAt                DateTime   @default(now())
-  updatedAt                DateTime   @updatedAt
-  accounts                 Account[]
-  sessions                 Session[]
-  categories               Category[]
+  id                      String     @id @default(cuid())
+  name                    String?
+  email                   String     @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?
+  plan                    Plan       @default(FREE)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  resetPasswordExpiry     DateTime?
+  resetPasswordToken      String?    @unique
+  stripeCustomerId        String?    @unique
+  stripeSubscriptionId    String?    @unique
+  verificationToken       String?    @unique
+  verificationTokenExpiry DateTime?
+  accounts                Account[]
+  categories              Category[]
+  sessions                Session[]
 }
 
 model Account {

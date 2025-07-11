@@ -37,9 +37,9 @@ export default function Logo({ size = 'md', showText = true, className = '', onC
           <div className="relative">
             {/* Three vertical panels representing the 3-panel layout */}
             <div className="flex gap-0.5">
-              <div className={`bg-white rounded-full opacity-90 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
-              <div className={`bg-white rounded-full opacity-70 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
-              <div className={`bg-white rounded-full opacity-50 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
+              <div className={`bg-white dark:bg-slate-300 rounded-full opacity-90 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
+              <div className={`bg-white dark:bg-slate-300 rounded-full opacity-70 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
+              <div className={`bg-white dark:bg-slate-300 rounded-full opacity-50 ${size === '2xl' ? 'w-2.5 h-6' : 'w-1.5 h-4'}`}></div>
             </div>
           </div>
         </div>

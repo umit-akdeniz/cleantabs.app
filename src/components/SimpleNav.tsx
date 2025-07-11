@@ -18,7 +18,10 @@ export default function SimpleNav() {
   const isAuthenticated = status === 'authenticated';
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ 
+      callbackUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://cleantabs.app',
+      redirect: true 
+    });
   };
 
   // Close dropdowns when clicking outside
