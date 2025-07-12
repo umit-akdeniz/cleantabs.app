@@ -312,6 +312,8 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
     reminderType: 'NOTIFICATION' | 'EMAIL' | 'BOTH';
   }) => {
     try {
+      console.log('Creating reminder with data:', reminderData, 'siteId:', site?.id);
+      
       const response = await fetch('/api/reminders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -321,9 +323,11 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
         }),
       });
 
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const reminder = await response.json();
-        console.log('Reminder created:', reminder);
+        console.log('Reminder created successfully:', reminder);
         
         // Update site to show reminder is enabled
         if (site && onUpdate) {
@@ -337,6 +341,9 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
             icon: '/icon-192x192.png'
           });
         }
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to create reminder:', response.status, errorData);
       }
     } catch (error) {
       console.error('Error saving reminder:', error);

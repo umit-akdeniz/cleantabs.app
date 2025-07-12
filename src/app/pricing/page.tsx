@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
 import { Check, Crown, Zap, Shield, Star } from 'lucide-react';
 import AdvancedNav from '@/components/AdvancedNav';
 import LandingFooter from '@/components/LandingFooter';
 
 export default function Pricing() {
-  const { data: session } = useSession();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
 
   const handleUpgrade = async (priceType: 'premium_monthly' | 'premium_yearly' = 'premium_monthly') => {
-    if (!session) {
+    if (!isAuthenticated) {
       router.push('/auth/signin');
       return;
     }

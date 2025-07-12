@@ -34,8 +34,8 @@ export function useDatabase(): DatabaseData {
         sitesRes.json()
       ]);
       
-      setCategories(categoriesData);
-      setSites(sitesData);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      setSites(Array.isArray(sitesData) ? sitesData : []);
       setError(null);
     } catch (err) {
       console.error('Database fetch error:', err);
@@ -58,7 +58,7 @@ export function useDatabase(): DatabaseData {
       const categoriesRes = await fetch('/api/categories', { cache: 'no-store' });
       if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
       const categoriesData = await categoriesRes.json();
-      setCategories(categoriesData);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (err) {
       console.error('Categories fetch error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

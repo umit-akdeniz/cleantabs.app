@@ -58,7 +58,7 @@ export default function SiteCard({ site, onEdit, onDelete, onAddSubLink }: SiteC
           <p className="text-sm text-slate-500 dark:text-slate-400">No sub links added</p>
         ) : (
           <ul className="space-y-1">
-            {site.subLinks.map((subLink) => (
+            {Array.isArray(site.subLinks) ? site.subLinks.map((subLink) => (
               <li key={subLink.id} className="text-sm">
                 <a
                   href={subLink.url}
@@ -75,7 +75,7 @@ export default function SiteCard({ site, onEdit, onDelete, onAddSubLink }: SiteC
                   </p>
                 )}
               </li>
-            ))}
+            )) : []}
           </ul>
         )}
       </div>

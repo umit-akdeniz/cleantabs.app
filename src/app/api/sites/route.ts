@@ -1,36 +1,21 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateId } from '@/lib/utils';
-import { authOptions } from '@/lib/auth';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const sites = await prisma.site.findMany({
       where: {
         subcategory: {
           category: {
-            userId: user.id
+            userId: user.userId
           }
         }
       },
@@ -49,7 +34,7 @@ export async function GET() {
     });
 
     // Transform data to match the expected format
-    const transformedSites = sites.map(site => ({
+    const transformedSites = Array.isArray(sites) ? sites.map(site => ({
       id: site.id,
       name: site.name,
       url: site.url,
@@ -59,15 +44,15 @@ export async function GET() {
       personalNotes: site.personalNotes,
       customInitials: site.customInitials,
       lastChecked: site.lastChecked?.toISOString(),
-      tags: site.tags.map(tag => tag.name),
+      tags: Array.isArray(site.tags) ? site.tags.map(tag => tag.name) : [],
       reminderEnabled: site.reminderEnabled,
       categoryId: site.subcategory.category.id,
       subcategoryId: site.subcategoryId,
-      subLinks: site.subLinks.map(link => ({
+      subLinks: Array.isArray(site.subLinks) ? site.subLinks.map(link => ({
         name: link.name,
         url: link.url
-      }))
-    }));
+      })) : []
+    })) : [];
 
     return NextResponse.json(transformedSites);
   } catch (error) {
@@ -79,8 +64,14 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
+    }
+
     const body = await request.json();
     const { name, url, description, color, favicon, personalNotes, customInitials, tags, reminderEnabled, subcategoryId, subLinks } = body;
 

@@ -62,7 +62,7 @@ export default function Sidebar({
       </div>
 
       <div className="p-4">
-        {categories.map((category) => (
+        {Array.isArray(categories) ? categories.map((category) => (
           <div key={category.id} className="mb-2">
             <button
               onClick={() => toggleCategory(category.id)}
@@ -83,7 +83,7 @@ export default function Sidebar({
 
             {expandedCategories.includes(category.id) && (
               <div className="ml-6 mt-2 space-y-1">
-                {category.subcategories.map((subcategory) => (
+                {Array.isArray(category.subcategories) ? category.subcategories.map((subcategory) => (
                   <div key={subcategory.id}>
                     <button
                       onClick={() => toggleSubcategory(subcategory.id)}
@@ -104,7 +104,7 @@ export default function Sidebar({
 
                     {expandedSubcategories.includes(subcategory.id) && (
                       <div className="ml-6 mt-1 space-y-1">
-                        {subcategory.items.map((item) => (
+                        {Array.isArray(subcategory.items) ? subcategory.items.map((item) => (
                           <button
                             key={item.id}
                             onClick={() => onItemSelect(item.id)}
@@ -117,15 +117,15 @@ export default function Sidebar({
                             <span className="text-xs">{item.icon}</span>
                             <span className="text-xs">{item.name}</span>
                           </button>
-                        ))}
+                        )) : []}
                       </div>
                     )}
                   </div>
-                ))}
+                )) : []}
               </div>
             )}
           </div>
-        ))}
+        )) : []}
       </div>
     </div>
   );

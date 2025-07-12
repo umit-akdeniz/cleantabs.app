@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    // Admin email kontrolü
-    if (!session || session.user?.email !== 'umitakdenizjob@gmail.com') {
-      return NextResponse.json(
-        { error: 'Unauthorized access' },
-        { status: 403 }
-      );
+    if (!user || !MiddlewareUtils.isAdmin(user)) {
+      return MiddlewareUtils.forbiddenResponse('Admin access required');
     }
 
     const body = await request.json();

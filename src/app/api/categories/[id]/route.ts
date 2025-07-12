@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const { name } = await request.json();
@@ -28,24 +24,12 @@ export async function PUT(
       );
     }
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
     // Verify the user owns this category
     const existingCategory = await prisma.category.findUnique({
       where: { id: categoryId }
     });
 
-    if (!existingCategory || existingCategory.userId !== user.id) {
+    if (!existingCategory || existingCategory.userId !== user.userId) {
       return NextResponse.json(
         { error: 'Category not found or unauthorized' },
         { status: 404 }

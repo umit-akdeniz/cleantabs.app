@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 import { createCheckoutSession, STRIPE_PRICES } from '@/lib/stripe';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   // Return early if Stripe is not configured
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
@@ -13,13 +12,10 @@ export async function POST(request: Request) {
   }
   
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const { priceType } = await request.json();
@@ -38,8 +34,8 @@ export async function POST(request: Request) {
       priceId,
       successUrl: `${baseUrl}/account?success=true`,
       cancelUrl: `${baseUrl}/account?canceled=true`,
-      customerEmail: session.user.email || '',
-      userId: session.user.id,
+      customerEmail: user.email,
+      userId: user.userId,
     });
 
     return NextResponse.json({ url: checkoutSession.url });

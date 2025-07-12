@@ -1,163 +1,147 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateId } from '@/lib/utils';
-import { authOptions } from '@/lib/auth';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
+import { APIErrorHandler, withErrorHandler } from '@/lib/api/error-handler';
+import { CacheManager } from '@/lib/cache/cache-manager';
+import { z } from 'zod';
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const GET = withErrorHandler(async (request: NextRequest) => {
+  const user = await MiddlewareUtils.getAuthenticatedUser(request);
+  
+  if (!user) {
+    return APIErrorHandler.unauthorized();
+  }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
+  // Try cache first
+  const cacheKey = CacheManager.getUserCacheKey(user.userId, 'categories');
+  const cached = CacheManager.get(cacheKey);
+  
+  if (cached) {
+    return APIErrorHandler.success(cached);
+  }
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    const categories = await prisma.category.findMany({
-      where: { userId: user.id },
-      include: {
-        subcategories: {
-          include: {
-            sites: {
-              include: {
-                tags: true,
-                subLinks: true
-              }
+  const categories = await prisma.category.findMany({
+    where: { userId: user.userId },
+    include: {
+      subcategories: {
+        include: {
+          sites: {
+            include: {
+              tags: true,
+              subLinks: true
             }
           }
         }
-      },
-      orderBy: {
-        createdAt: 'asc'
       }
-    });
+    },
+    orderBy: {
+      createdAt: 'asc'
+    }
+  });
 
-    // Transform data to match the expected format
-    const transformedCategories = categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      icon: category.icon,
-      subcategories: category.subcategories.map(sub => ({
-        id: sub.id,
-        name: sub.name,
-        icon: sub.icon,
-        items: sub.sites.map(site => ({
-          id: site.id,
-          name: site.name,
-          url: site.url,
-          description: site.description,
-          color: site.color,
-          favicon: site.favicon,
-          personalNotes: site.personalNotes,
-          tags: site.tags.map(tag => tag.name),
-          reminderEnabled: site.reminderEnabled,
-          categoryId: category.id,
-          subcategoryId: sub.id,
-          subLinks: site.subLinks.map(link => ({
-            name: link.name,
-            url: link.url
-          }))
-        }))
-      }))
-    }));
+  // Transform data to match the expected format
+  const transformedCategories = Array.isArray(categories) ? categories.map(category => ({
+    id: category.id,
+    name: category.name,
+    icon: category.icon,
+    subcategories: Array.isArray(category.subcategories) ? category.subcategories.map(sub => ({
+      id: sub.id,
+      name: sub.name,
+      icon: sub.icon,
+      items: Array.isArray(sub.sites) ? sub.sites.map(site => ({
+        id: site.id,
+        name: site.name,
+        url: site.url,
+        description: site.description,
+        color: site.color,
+        favicon: site.favicon,
+        personalNotes: site.personalNotes,
+        tags: Array.isArray(site.tags) ? site.tags.map(tag => tag.name) : [],
+        reminderEnabled: site.reminderEnabled,
+        categoryId: category.id,
+        subcategoryId: sub.id,
+        subLinks: Array.isArray(site.subLinks) ? site.subLinks.map(link => ({
+          name: link.name,
+          url: link.url
+        })) : []
+      })) : []
+    })) : []
+  })) : [];
 
-    return NextResponse.json(transformedCategories);
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch categories' },
-      { status: 500 }
-    );
+  // Cache the result
+  CacheManager.set(cacheKey, transformedCategories, {
+    ttl: 10 * 60 * 1000, // 10 minutes
+    tags: ['categories', `user:${user.userId}`]
+  });
+
+  return APIErrorHandler.success(transformedCategories);
+});
+
+const createCategorySchema = z.object({
+  name: z.string().min(1, 'Category name is required').max(50, 'Category name too long'),
+  icon: z.string().optional().default('Folder')
+});
+
+export const POST = withErrorHandler(async (request: NextRequest) => {
+  const user = await MiddlewareUtils.getAuthenticatedUser(request);
+  
+  if (!user) {
+    return APIErrorHandler.unauthorized();
   }
-}
 
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+  const body = await request.json();
+  const { name, icon } = createCategorySchema.parse(body);
+
+  const category = await prisma.category.create({
+    data: {
+      name,
+      icon,
+      userId: user.userId
+    },
+    include: {
+      subcategories: true
     }
+  });
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
+  // Invalidate user's categories cache
+  CacheManager.clearByTags([`user:${user.userId}`, 'categories']);
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
+  return APIErrorHandler.success(category, 201);
+});
 
-    const { name, icon = 'Folder' } = await request.json();
-    
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Category name is required' },
-        { status: 400 }
-      );
-    }
-
-    const category = await prisma.category.create({
-      data: {
-        name,
-        icon,
-        userId: user.id
-      },
-      include: {
-        subcategories: true
-      }
-    });
-
-    return NextResponse.json(category);
-  } catch (error) {
-    console.error('Error creating category:', error);
-    return NextResponse.json(
-      { error: 'Failed to create category' },
-      { status: 500 }
-    );
+export const DELETE = withErrorHandler(async (request: NextRequest) => {
+  const user = await MiddlewareUtils.getAuthenticatedUser(request);
+  
+  if (!user) {
+    return APIErrorHandler.unauthorized();
   }
-}
 
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const categoryId = searchParams.get('id');
-    
-    if (!categoryId) {
-      return NextResponse.json(
-        { error: 'Category ID is required' },
-        { status: 400 }
-      );
-    }
-
-    await prisma.category.delete({
-      where: { id: categoryId }
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting category:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete category' },
-      { status: 500 }
-    );
+  const { searchParams } = new URL(request.url);
+  const categoryId = searchParams.get('id');
+  
+  if (!categoryId) {
+    return APIErrorHandler.badRequest('Category ID is required');
   }
-}
+
+  // Verify ownership before deletion
+  const category = await prisma.category.findFirst({
+    where: { 
+      id: categoryId,
+      userId: user.userId 
+    }
+  });
+
+  if (!category) {
+    return APIErrorHandler.notFound('Category');
+  }
+
+  await prisma.category.delete({
+    where: { id: categoryId }
+  });
+
+  // Invalidate user's cache
+  CacheManager.clearByTags([`user:${user.userId}`, 'categories', 'sites']);
+
+  return APIErrorHandler.success({ success: true });
+});

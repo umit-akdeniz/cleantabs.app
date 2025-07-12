@@ -153,10 +153,10 @@ export default function DesktopSidebar({
           {showSearchResults && filteredSites.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
               {filteredSites.map((site) => {
-                const category = categories.find(c => 
-                  c.subcategories.some(sub => sub.id === site.subcategoryId)
-                );
-                const subcategory = category?.subcategories.find(sub => sub.id === site.subcategoryId);
+                const category = Array.isArray(categories) ? categories.find(c => 
+                  Array.isArray(c.subcategories) && c.subcategories.some(sub => sub.id === site.subcategoryId)
+                ) : null;
+                const subcategory = category && Array.isArray(category.subcategories) ? category.subcategories.find(sub => sub.id === site.subcategoryId) : null;
                 
                 return (
                   <button
@@ -207,7 +207,7 @@ export default function DesktopSidebar({
       {/* Navigation Tree */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
-          {categories.map((category) => (
+          {Array.isArray(categories) ? categories.map((category) => (
             <div key={category.id}>
               {/* Category */}
               <button
@@ -241,7 +241,7 @@ export default function DesktopSidebar({
               {/* Subcategories */}
               {expandedCategories.has(category.id) && category.subcategories && (
                 <div className="ml-4 mt-1 space-y-1">
-                  {category.subcategories.map((subcategory) => {
+                  {Array.isArray(category.subcategories) ? category.subcategories.map((subcategory) => {
                     const sitesInSubcategory = sites.filter(site => site.subcategoryId === subcategory.id);
                     return (
                       <div key={subcategory.id}>
@@ -276,7 +276,7 @@ export default function DesktopSidebar({
                         {/* Sites */}
                         {selectedSubcategory === subcategory.id && sitesInSubcategory.length > 0 && (
                           <div className="ml-3 mt-1 space-y-1">
-                            {sitesInSubcategory.map((site) => (
+                            {Array.isArray(sitesInSubcategory) ? sitesInSubcategory.map((site) => (
                               <button
                                 key={site.id}
                                 draggable
@@ -311,16 +311,16 @@ export default function DesktopSidebar({
                                   <div className="font-medium text-xs truncate">{site.name}</div>
                                 </div>
                               </button>
-                            ))}
+                            )) : []}
                           </div>
                         )}
                       </div>
                     );
-                  })}
+                  }) : []}
                 </div>
               )}
             </div>
-          ))}
+          )) : []}
         </div>
       </div>
     </div>

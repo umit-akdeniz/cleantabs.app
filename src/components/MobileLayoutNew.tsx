@@ -57,9 +57,9 @@ export default function MobileLayoutNew({
   const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
-  const selectedSubcategoryData = selectedCategoryData?.subcategories.find(s => s.id === selectedSubcategory);
-  const sitesInSubcategory = sites.filter(site => site.subcategoryId === selectedSubcategory);
+  const selectedCategoryData = Array.isArray(categories) ? categories.find(c => c.id === selectedCategory) : null;
+  const selectedSubcategoryData = selectedCategoryData && Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.find(s => s.id === selectedSubcategory) : null;
+  const sitesInSubcategory = Array.isArray(sites) ? sites.filter(site => site.subcategoryId === selectedSubcategory) : [];
 
   const predefinedColors = [
     '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b', 
@@ -178,8 +178,8 @@ export default function MobileLayoutNew({
     onCategorySelect(categoryId);
     setIsCategoryDropdownOpen(false);
     // Auto-select first subcategory
-    const category = categories.find(c => c.id === categoryId);
-    if (category && category.subcategories.length > 0) {
+    const category = Array.isArray(categories) ? categories.find(c => c.id === categoryId) : null;
+    if (category && Array.isArray(category.subcategories) && category.subcategories.length > 0) {
       onSubcategorySelect(category.subcategories[0].id);
     }
   };
@@ -336,10 +336,10 @@ export default function MobileLayoutNew({
           {showSearchResults && filteredSites.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-brand-800 border border-brand-200 dark:border-brand-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
               {filteredSites.map((site) => {
-                const category = categories.find(c => 
-                  c.subcategories.some(sub => sub.id === site.subcategoryId)
-                );
-                const subcategory = category?.subcategories.find(sub => sub.id === site.subcategoryId);
+                const category = Array.isArray(categories) ? categories.find(c => 
+                  Array.isArray(c.subcategories) && c.subcategories.some(sub => sub.id === site.subcategoryId)
+                ) : null;
+                const subcategory = category && Array.isArray(category.subcategories) ? category.subcategories.find(sub => sub.id === site.subcategoryId) : null;
                 
                 return (
                   <button
@@ -396,7 +396,7 @@ export default function MobileLayoutNew({
           
           {isCategoryDropdownOpen && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-              {categories.map((category) => (
+              {Array.isArray(categories) ? categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => handleCategorySelect(category.id)}
@@ -417,7 +417,7 @@ export default function MobileLayoutNew({
                     {category.subcategories?.length || 0} subcategories
                   </div>
                 </button>
-              ))}
+              )) : []}
             </div>
           )}
         </div>
@@ -442,7 +442,7 @@ export default function MobileLayoutNew({
             
             {isSubcategoryDropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-brand-800 border border-brand-200 dark:border-brand-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                {selectedCategoryData.subcategories.map((subcategory) => {
+                {Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.map((subcategory) => {
                   const sitesCount = sites.filter(site => site.subcategoryId === subcategory.id).length;
                   return (
                     <button
@@ -475,7 +475,7 @@ export default function MobileLayoutNew({
                       </div>
                     </button>
                   );
-                })}
+                }) : []}
               </div>
             )}
           </div>

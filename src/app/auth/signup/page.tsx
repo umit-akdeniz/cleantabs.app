@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import Logo from '@/components/Logo';
-import { safeFetch } from '@/lib/api-client';
-import { clearAllStorageData } from '@/lib/auth/utils';
+import { useAuth } from '@/lib/auth/context';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -19,9 +17,11 @@ export default function SignUp() {
   const [success, setSuccess] = useState('');
   const router = useRouter();
 
-  // Clear all storage data when component loads
+  const { register, isLoading: authLoading, error: authError } = useAuth();
+
+  // Clear error when component loads
   useEffect(() => {
-    clearAllStorageData();
+    setError('');
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,32 +61,12 @@ export default function SignUp() {
     }
 
     try {
-      const data = await safeFetch('/api/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          password,
-        }),
-      });
-
-      setSuccess('Account created successfully! Signing you in...');
-      
-      const result = await signIn('credentials', {
-        email: email.trim().toLowerCase(),
-        password,
-        redirect: false,
-      });
-
-      if (result?.ok) {
+      await register(name.trim(), email.trim().toLowerCase(), password);
+      setSuccess('Account created successfully! Redirecting to dashboard...');
+      setTimeout(() => {
         router.push('/dashboard');
         router.refresh();
-      } else {
-        setSuccess('Account created! Please sign in with your credentials.');
-        setTimeout(() => {
-          router.push('/auth/signin');
-        }, 2000);
-      }
+      }, 1000);
     } catch (error: any) {
       setError(error.message || 'Something went wrong. Please try again.');
     } finally {
@@ -95,10 +75,7 @@ export default function SignUp() {
   };
 
   const handleOAuthSignUp = async (provider: string) => {
-    setLoading(true);
-    // Clear storage before OAuth
-    clearAllStorageData();
-    await signIn(provider, { callbackUrl: '/dashboard' });
+    setError('OAuth sign-up is not currently available. Please use email registration.');
   };
 
   return (
@@ -147,7 +124,7 @@ export default function SignUp() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                   </svg>
                 </div>
-                <span className="text-blue-100 dark:text-slate-300">No email verification required</span>
+                <span className="text-blue-100 dark:text-slate-300">Email verification for security</span>
               </div>
             </div>
 

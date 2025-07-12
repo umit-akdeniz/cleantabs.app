@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { performCompleteSignOut, initializeUserSession, validateSession } from '@/lib/auth/utils';
+import { useAuth } from '@/lib/auth/context';
 import { Site } from '@/types';
 import { useDatabase } from '@/hooks/useDatabase';
 // Dynamic imports to prevent hydration issues
@@ -41,29 +40,25 @@ const AIPromptsModal = dynamic(() => import('@/components/AIPromptsModal'), {
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import { checkPlanLimits } from '@/lib/planLimits';
-import { Globe, AlertCircle, LogOut, User, Crown, Search, Settings, UserCircle, Sliders, ChevronDown, Sparkles } from 'lucide-react';
+import { Globe, AlertCircle, LogOut, User, Crown, Search, Settings, UserCircle, Sliders, ChevronDown, Sparkles, Bell } from 'lucide-react';
 import { showToast } from '@/components/Toast';
 import CookieConsent from '@/components/CookieConsent';
+import { useHydration } from '@/hooks/useHydration';
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { user, logout, isLoading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const { categories, sites: dbSites, loading, error, refreshData, refreshCategories } = useDatabase();
 
-  // Basit session validation
+  // Auth validation - cleaner approach
   useEffect(() => {
-    if (status === 'loading') return;
+    if (authLoading) return; // Still loading
 
-    if (status === 'unauthenticated' || !session) {
+    if (!isAuthenticated) {
       router.push('/auth/signin');
       return;
     }
-
-    // Session geçerliyse kullanıcı bilgilerini initialize et
-    if (session?.user && status === 'authenticated') {
-      initializeUserSession(session.user);
-    }
-  }, [session, status, router]);
+  }, [isAuthenticated, authLoading, router]);
   const [sites, setSites] = useState<Site[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
@@ -86,52 +81,52 @@ export default function Home() {
     }
   }, [dbSites]);
 
-  // Load saved state on mount
+  // Load saved state on mount - simplified
   useEffect(() => {
-    if (categories.length > 0 && sites.length > 0) {
+    if (typeof window === 'undefined' || !Array.isArray(categories) || !Array.isArray(sites) || categories.length === 0 || sites.length === 0) return;
+    
+    try {
       const savedState = localStorage.getItem('cleantabs-state');
       if (savedState) {
-        try {
-          const { categoryId, subcategoryId, siteId } = JSON.parse(savedState);
+        const { categoryId, subcategoryId, siteId } = JSON.parse(savedState);
+        
+        // Verify that saved IDs still exist
+        const category = categories.find(c => c.id === categoryId);
+        if (category && Array.isArray(category.subcategories)) {
+          setSelectedCategory(categoryId);
           
-          // Verify that saved IDs still exist
-          const category = categories.find(c => c.id === categoryId);
-          if (category) {
-            setSelectedCategory(categoryId);
+          const subcategory = category.subcategories.find(s => s.id === subcategoryId);
+          if (subcategory) {
+            setSelectedSubcategory(subcategoryId);
             
-            const subcategory = category.subcategories.find(s => s.id === subcategoryId);
-            if (subcategory) {
-              setSelectedSubcategory(subcategoryId);
-              
-              const site = sites.find(s => s.id === siteId && s.subcategoryId === subcategoryId);
-              if (site) {
-                setSelectedSite(site);
-              }
+            const site = sites.find(s => s.id === siteId && s.subcategoryId === subcategoryId);
+            if (site) {
+              setSelectedSite(site);
             }
           }
-        } catch (error) {
-          console.log('Error loading saved state:', error);
         }
       }
+    } catch (error) {
+      console.log('Error loading saved state:', error);
     }
   }, [categories, sites]);
 
-  // Save state when selections change
+  // Save state when selections change - simplified
   useEffect(() => {
-    if (selectedCategory) {
-      const stateToSave = {
-        categoryId: selectedCategory,
-        subcategoryId: selectedSubcategory,
-        siteId: selectedSite?.id
-      };
-      localStorage.setItem('cleantabs-state', JSON.stringify(stateToSave));
-    }
+    if (typeof window === 'undefined' || !selectedCategory) return;
+    
+    const stateToSave = {
+      categoryId: selectedCategory,
+      subcategoryId: selectedSubcategory,
+      siteId: selectedSite?.id
+    };
+    localStorage.setItem('cleantabs-state', JSON.stringify(stateToSave));
   }, [selectedCategory, selectedSubcategory, selectedSite]);
 
 
   const handleAddSite = () => {
     // Check plan limits for free users
-    if (session?.user?.plan === 'FREE') {
+    if (user?.plan === 'FREE') {
       const limitCheck = checkPlanLimits('FREE', 'site', {
         totalSites: sites.length,
         totalSitesInSubcategory: selectedSubcategory 
@@ -214,7 +209,7 @@ export default function Home() {
 
   const handleAddCategory = async (name: string) => {
     // Check plan limits for free users
-    if (session?.user?.plan === 'FREE') {
+    if (user?.plan === 'FREE') {
       const limitCheck = checkPlanLimits('FREE', 'category', {
         totalCategories: categories.length
       });
@@ -261,7 +256,7 @@ export default function Home() {
 
   const handleAddSubcategory = async (categoryId: string, name: string) => {
     // Check plan limits for free users
-    if (session?.user?.plan === 'FREE') {
+    if (user?.plan === 'FREE') {
       const category = categories.find(c => c.id === categoryId);
       const subcategoryCount = category?.subcategories?.length || 0;
       
@@ -498,11 +493,13 @@ export default function Home() {
   };
 
   const handleCategorySelect = useCallback((categoryId: string) => {
+    if (!Array.isArray(categories) || !Array.isArray(sites)) return;
+    
     const category = categories.find(c => c.id === categoryId);
     setSelectedCategory(categoryId);
     
     // Auto-select first subcategory if available
-    if (category && category.subcategories.length > 0) {
+    if (category && Array.isArray(category.subcategories) && category.subcategories.length > 0) {
       const firstSubcategory = category.subcategories[0];
       setSelectedSubcategory(firstSubcategory.id);
       
@@ -525,6 +522,8 @@ export default function Home() {
   }, [categories, sites]);
 
   const handleSubcategorySelect = useCallback((subcategoryId: string) => {
+    if (!Array.isArray(sites)) return;
+    
     setSelectedSubcategory(subcategoryId);
     
     // Auto-select first site in selected subcategory if available
@@ -552,7 +551,7 @@ export default function Home() {
 
   // Filter sites based on search query (memoized)
   const filteredSites = useMemo(() => {
-    if (!searchQuery) return [];
+    if (!searchQuery || !Array.isArray(sites)) return [];
     return sites.filter(site => 
       site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       site.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -566,7 +565,7 @@ export default function Home() {
 
   // Get all available tags from sites (memoized)
   const availableTags = useMemo(() => 
-    Array.from(new Set(sites.flatMap(site => site.tags || []))), 
+    Array.isArray(sites) ? Array.from(new Set(sites.flatMap(site => site.tags || []))) : [], 
     [sites]
   );
 
@@ -648,15 +647,8 @@ export default function Home() {
     }
   }, [selectedSite?.id]);
 
-  // Redirect to signin if not authenticated
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin?callbackUrl=/dashboard');
-    }
-  }, [status, router]);
-
   // Show loading while checking authentication
-  if (status === 'loading') {
+  if (authLoading) {
     return (
       <div className="h-screen bg-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:bg-gradient-to-br flex items-center justify-center">
         <div className="text-center space-y-6 flex flex-col items-center">
@@ -694,7 +686,7 @@ export default function Home() {
   }
 
   // Don't render if not authenticated
-  if (status === 'unauthenticated') {
+  if (!isAuthenticated && !authLoading) {
     return null;
   }
 
@@ -754,10 +746,10 @@ export default function Home() {
                     Found {filteredSites.length} sites
                   </div>
                   {filteredSites.map((site) => {
-                    const category = categories.find(c => 
-                      c.subcategories.some(sub => sub.id === site.subcategoryId)
-                    );
-                    const subcategory = category?.subcategories.find(sub => sub.id === site.subcategoryId);
+                    const category = Array.isArray(categories) ? categories.find(c => 
+                      Array.isArray(c.subcategories) && c.subcategories.some(sub => sub.id === site.subcategoryId)
+                    ) : null;
+                    const subcategory = category && Array.isArray(category.subcategories) ? category.subcategories.find(sub => sub.id === site.subcategoryId) : null;
                     
                     return (
                       <div
@@ -811,7 +803,7 @@ export default function Home() {
             >
               {/* Avatar */}
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm ${
-                session?.user?.plan === 'PREMIUM' 
+                user?.plan === 'PREMIUM' 
                   ? 'bg-gradient-to-br from-slate-700 to-slate-800' 
                   : 'bg-gradient-to-br from-slate-500 to-slate-600'
               }`}>
@@ -821,7 +813,7 @@ export default function Home() {
               {/* User Info */}
               <div className="hidden md:block text-left">
                 <div className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">
-                  {session?.user?.name || session?.user?.email}
+                  {user?.name || user?.email}
                 </div>
               </div>
               
@@ -835,14 +827,14 @@ export default function Home() {
                 style={{ zIndex: 999999 }}
               >
                 <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-                  {session?.user?.plan === 'PREMIUM' && (
+                  {user?.plan === 'PREMIUM' && (
                     <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                       <User className="w-3 h-3" />
                       Premium User
                     </div>
                   )}
                   <div className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">
-                    {session?.user?.name || 'User'}
+                    {user?.name || 'User'}
                   </div>
                 </div>
                 
@@ -892,9 +884,24 @@ export default function Home() {
                   AI Prompts
                 </button>
                 
+                <button 
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    router.push('/dashboard/reminders');
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3"
+                >
+                  <Bell className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  Reminders
+                </button>
+                
                 <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
                   <button
-                    onClick={() => performCompleteSignOut('/auth/signin')}
+                    onClick={async () => {
+                      setShowProfileMenu(false);
+                      await logout();
+                      router.push('/auth/signin');
+                    }}
                     className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
                   >
                     <LogOut className="w-4 h-4" />

@@ -1,16 +1,15 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const body = await request.json();
@@ -59,13 +58,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const { id } = await context.params;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { 
@@ -40,7 +40,7 @@ interface SiteStats {
 }
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [siteStats, setSiteStats] = useState<SiteStats>({
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (status === 'loading') {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-600" />
                 <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {session?.user?.email}
+                  {user?.email}
                 </span>
               </div>
             </div>

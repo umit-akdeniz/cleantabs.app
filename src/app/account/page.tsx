@@ -1,16 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Mail, Crown, Calendar, Shield, Edit3, Save, X, CreditCard, Download, RefreshCcw } from 'lucide-react';
 
 export default function AccountPage() {
-  const { data: session } = useSession();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(session?.user?.name || '');
-  const [email, setEmail] = useState(session?.user?.email || '');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/auth/signin');
+      return;
+    }
+    
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+    }
+  }, [user, isAuthenticated, isLoading, router]);
   const [loading, setLoading] = useState(false);
 
   const handleSave = () => {
@@ -20,8 +32,8 @@ export default function AccountPage() {
   };
 
   const handleCancel = () => {
-    setName(session?.user?.name || '');
-    setEmail(session?.user?.email || '');
+    setName(user?.name || '');
+    setEmail(user?.email || '');
     setIsEditing(false);
   };
 
@@ -89,7 +101,7 @@ export default function AccountPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  session?.user?.plan === 'PREMIUM' 
+                  user?.plan === 'PREMIUM' 
                     ? 'bg-gradient-to-br from-slate-700 to-slate-800' 
                     : 'bg-gradient-to-br from-slate-500 to-slate-600'
                 }`}>
@@ -142,7 +154,7 @@ export default function AccountPage() {
                   />
                 ) : (
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-900 dark:text-slate-100">
-                    {session?.user?.name || 'Not set'}
+                    {user?.name || 'Not set'}
                   </div>
                 )}
               </div>
@@ -159,7 +171,7 @@ export default function AccountPage() {
                   />
                 ) : (
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-900 dark:text-slate-100">
-                    {session?.user?.email}
+                    {user?.email}
                   </div>
                 )}
               </div>
@@ -178,11 +190,11 @@ export default function AccountPage() {
               <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    session?.user?.plan === 'PREMIUM' 
+                    user?.plan === 'PREMIUM' 
                       ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
                       : 'bg-slate-500'
                   }`}>
-                    {session?.user?.plan === 'PREMIUM' ? (
+                    {user?.plan === 'PREMIUM' ? (
                       <Crown className="w-5 h-5 text-white" />
                     ) : (
                       <User className="w-5 h-5 text-white" />
@@ -191,16 +203,16 @@ export default function AccountPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-slate-900 dark:text-slate-100">
-                        {session?.user?.plan === 'PREMIUM' ? 'Premium Plan' : 'Free Plan'}
+                        {user?.plan === 'PREMIUM' ? 'Premium Plan' : 'Free Plan'}
                       </span>
-                      {session?.user?.plan === 'PREMIUM' && (
+                      {user?.plan === 'PREMIUM' && (
                         <span className="text-sm px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
                           Active
                         </span>
                       )}
                     </div>
                     <div className="text-sm text-slate-500 dark:text-slate-400">
-                      {session?.user?.plan === 'PREMIUM' 
+                      {user?.plan === 'PREMIUM' 
                         ? '$9.99/month • Next billing: January 15, 2024' 
                         : 'Limited to 5 categories and 50 sites'
                       }
@@ -209,10 +221,10 @@ export default function AccountPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    {session?.user?.plan === 'PREMIUM' ? '$9.99' : 'Free'}
+                    {user?.plan === 'PREMIUM' ? '$9.99' : 'Free'}
                   </div>
                   <div className="text-sm text-slate-500 dark:text-slate-400">
-                    {session?.user?.plan === 'PREMIUM' ? 'per month' : 'forever'}
+                    {user?.plan === 'PREMIUM' ? 'per month' : 'forever'}
                   </div>
                 </div>
               </div>
@@ -220,7 +232,7 @@ export default function AccountPage() {
 
             {/* Action Buttons */}
             <div className="grid md:grid-cols-3 gap-3">
-              {session?.user?.plan === 'PREMIUM' ? (
+              {user?.plan === 'PREMIUM' ? (
                 <>
                   <button 
                     onClick={handleManageSubscription}
@@ -278,7 +290,7 @@ export default function AccountPage() {
           </div>
 
           {/* Billing History */}
-          {session?.user?.plan === 'PREMIUM' && (
+          {user?.plan === 'PREMIUM' && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <CreditCard className="w-5 h-5 text-slate-600 dark:text-slate-400" />

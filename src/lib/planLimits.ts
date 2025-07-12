@@ -80,22 +80,22 @@ export function getPlanUsage(categories: any[], sites: any[], plan: 'FREE' | 'PR
   const totalCategories = categories.length;
   const totalSites = sites.length;
   
-  const subcategoryUsage = categories.map(cat => ({
+  const subcategoryUsage = Array.isArray(categories) ? categories.map(cat => ({
     categoryId: cat.id,
     categoryName: cat.name,
     subcategoriesCount: cat.subcategories?.length || 0,
     maxSubcategories: limits.maxSubcategoriesPerCategory,
-  }));
+  })) : [];
 
-  const siteUsage = categories.flatMap(cat => 
-    cat.subcategories?.map((sub: any) => ({
+  const siteUsage = Array.isArray(categories) ? categories.flatMap(cat => 
+    Array.isArray(cat.subcategories) ? cat.subcategories.map((sub: any) => ({
       subcategoryId: sub.id,
       subcategoryName: sub.name,
       categoryName: cat.name,
       sitesCount: sites.filter((site: any) => site.subcategoryId === sub.id).length,
       maxSites: limits.maxSitesPerSubcategory,
-    })) || []
-  );
+    })) : []
+  ) : [];
 
   return {
     categories: {

@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Suspense } from 'react';
 import Logo from '@/components/Logo';
-import { clearAllStorageData } from '@/lib/auth/utils';
+import { useAuth } from '@/lib/auth/context';
 
 function SignInContent() {
   const [email, setEmail] = useState('');
@@ -19,9 +18,11 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-  // Clear all storage data when component loads
+  const { login, isLoading: authLoading, error: authError } = useAuth();
+
+  // Clear error when component loads
   useEffect(() => {
-    clearAllStorageData();
+    setError('');
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,20 +43,18 @@ function SignInContent() {
     }
 
     try {
-      const result = await signIn('credentials', {
-        email: email.trim().toLowerCase(),
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Invalid email or password');
-      } else if (result?.ok) {
-        router.push(callbackUrl);
-        router.refresh();
-      }
+      await login(email.trim().toLowerCase(), password);
+      
+      // Decode the callback URL if it's encoded
+      const decodedCallbackUrl = decodeURIComponent(callbackUrl);
+      
+      // Small delay to ensure auth state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Use router.push for better SPA experience
+      router.push(decodedCallbackUrl);
     } catch (error) {
-      setError('Something went wrong. Please try again.');
+      setError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -63,9 +62,16 @@ function SignInContent() {
 
   const handleOAuthSignIn = async (provider: string) => {
     setLoading(true);
-    // Clear storage before OAuth
-    clearAllStorageData();
-    await signIn(provider, { callbackUrl });
+    setError('');
+    
+    try {
+      // OAuth providers not implemented in API-only auth yet
+      setError('OAuth providers are not available. Please use email signin.');
+    } catch (error) {
+      setError('OAuth providers are not available. Please use email signin.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

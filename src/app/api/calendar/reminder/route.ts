@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/auth/database';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const { siteId, reminderDate, title, description } = await request.json();
@@ -23,15 +19,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has premium plan
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user || user.plan !== 'PREMIUM') {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Premium subscription required' },
-        { status: 403 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
@@ -41,7 +32,11 @@ export async function POST(request: NextRequest) {
       include: {
         subcategory: {
           include: {
-            category: true
+            category: {
+              include: {
+                user: true
+              }
+            }
           }
         }
       }
@@ -55,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this site
-    if (site.subcategory.category.userId !== user.id) {
+    if (site.subcategory.category.userId !== user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -79,9 +74,8 @@ export async function POST(request: NextRequest) {
         title,
         description: description || `Reminder to check: ${site.name}`,
         reminderDate: new Date(reminderDate),
-        reminderType: 'BOTH', // Email and notification
-        siteId,
-        userId: user.id
+        reminderType: 'NOTIFICATION',
+        siteId
       }
     });
 
@@ -113,13 +107,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const reminder = await prisma.reminder.findUnique({
@@ -129,7 +120,11 @@ export async function GET(request: NextRequest) {
           include: {
             subcategory: {
               include: {
-                category: true
+                category: {
+                  include: {
+                    user: true
+                  }
+                }
               }
             }
           }
@@ -145,7 +140,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user owns this reminder
-    if (reminder.userId !== reminder.site.subcategory.category.userId) {
+    if (reminder.site.subcategory.category.userId !== user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -154,7 +149,7 @@ export async function GET(request: NextRequest) {
 
     // Generate ICS file content
     const icsContent = generateICSFile({
-      title: reminder.title,
+      title: reminder.title || `Reminder: ${reminder.site.name}`,
       description: reminder.description || '',
       url: reminder.site.url,
       siteName: reminder.site.name,

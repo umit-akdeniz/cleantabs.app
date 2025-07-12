@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
 import { Shield, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function CtAdminPage() {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -14,25 +14,25 @@ export default function CtAdminPage() {
   const router = useRouter();
 
   // Admin email kontrolü
-  const isAdminEmail = session?.user?.email === 'umitakdenizjob@gmail.com';
+  const isAdminEmail = user?.email === 'umitakdenizjob@gmail.com';
   
   useEffect(() => {
-    if (status === 'loading') return; // Loading durumunda bekle
+    if (isLoading) return; // Loading durumunda bekle
     
-    if (!session) {
+    if (!isAuthenticated) {
       // Giriş yapılmamışsa ana sayfaya yönlendir
       router.push('/');
       return;
     }
     
-    if (session && !isAdminEmail) {
+    if (isAuthenticated && !isAdminEmail) {
       // Yetkisiz kullanıcı - sadece animasyon göster
       return;
     }
-  }, [session, status, isAdminEmail, router]);
+  }, [isAuthenticated, isLoading, isAdminEmail, router]);
   
   // Loading durumu
-  if (status === 'loading') {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-lg">Yükleniyor...</div>
@@ -41,7 +41,7 @@ export default function CtAdminPage() {
   }
   
   // Giriş yapılmamışsa yönlendir
-  if (!session) {
+  if (!isAuthenticated) {
     return null;
   }
   

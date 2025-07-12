@@ -3,25 +3,22 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function SimpleNav() {
-  const { data: session, status } = useSession();
+  const { user, logout, isLoading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProduct, setShowProduct] = useState(false);
   const [showDevelopers, setShowDevelopers] = useState(false);
   const [showCompany, setShowCompany] = useState(false);
   const [showUser, setShowUser] = useState(false);
 
-  const isAuthenticated = status === 'authenticated';
+  const isAuthenticated = !!user;
 
   const handleSignOut = async () => {
-    await signOut({ 
-      callbackUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://cleantabs.app',
-      redirect: true 
-    });
+    await logout();
   };
 
   // Close dropdowns when clicking outside
@@ -166,7 +163,7 @@ export default function SimpleNav() {
                     }}
                   >
                     <User className="w-4 h-4" />
-                    {session?.user?.name || session?.user?.email || 'User'}
+                    {user?.name || user?.email || 'User'}
                     <ChevronDown className="w-4 h-4" />
                   </button>
                   

@@ -57,14 +57,14 @@ export default function ThreePanelSidebar({
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
   const [isCategoryManagementOpen, setIsCategoryManagementOpen] = useState(false);
   
-  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
-  const selectedSubcategoryData = selectedCategoryData?.subcategories.find(s => s.id === selectedSubcategory);
+  const selectedCategoryData = Array.isArray(categories) ? categories.find(c => c.id === selectedCategory) : null;
+  const selectedSubcategoryData = selectedCategoryData && Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.find(s => s.id === selectedSubcategory) : null;
 
-  const filteredSites = sites.filter(site => {
+  const filteredSites = Array.isArray(sites) ? sites.filter(site => {
     if (selectedCategory && site.categoryId !== selectedCategory) return false;
     if (selectedSubcategory && site.subcategoryId !== selectedSubcategory) return false;
     return true;
-  });
+  }) : [];
 
   const handleAddCategory = (name: string) => {
     alert(`Kategori "${name}" eklendi!`);
@@ -103,7 +103,7 @@ export default function ThreePanelSidebar({
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="space-y-6 w-full px-8 py-6 flex flex-col items-center justify-center min-h-full">
-            {categories.map((category) => (
+            {Array.isArray(categories) ? categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => onCategorySelect(category.id)}
@@ -118,7 +118,7 @@ export default function ThreePanelSidebar({
                 </span>
                 {category.name}
               </button>
-            ))}
+            )) : []}
             
             {showCategoryManagement && (
               <button
@@ -145,7 +145,7 @@ export default function ThreePanelSidebar({
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {selectedCategoryData && (
             <div className="space-y-6 w-full px-8 py-6 flex flex-col items-center justify-center min-h-full">
-              {selectedCategoryData.subcategories.map((subcategory) => (
+              {Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.map((subcategory) => (
                 <button
                   key={subcategory.id}
                   onClick={() => onSubcategorySelect(subcategory.id)}
@@ -160,7 +160,7 @@ export default function ThreePanelSidebar({
                   </span>
                   {subcategory.name}
                 </button>
-              ))}
+              )) : []}
               
               {showSubcategoryManagement && (
                 <button
@@ -188,7 +188,7 @@ export default function ThreePanelSidebar({
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {selectedSubcategoryData && (
             <div className="space-y-4">
-              {filteredSites.map((site) => (
+              {Array.isArray(filteredSites) ? filteredSites.map((site) => (
                 <div
                   key={site.id}
                   className="group cursor-pointer"
@@ -265,7 +265,7 @@ export default function ThreePanelSidebar({
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : []}
               
               {filteredSites.length === 0 && (
                 <div className="text-center py-8">

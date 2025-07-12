@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('Admin users API called');
     console.log('Request headers:', Object.fromEntries(request.headers.entries()));
     
-    const session = await getServerSession(authOptions);
-    console.log('Session in admin API:', JSON.stringify(session, null, 2));
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      console.log('No session or email found');
-      return NextResponse.json({ error: 'No session found' }, { status: 401 });
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
     
-    if (session.user.email !== 'umitakdenizjob@gmail.com') {
-      console.log('User not admin:', session.user.email);
-      return NextResponse.json({ error: 'Not admin user' }, { status: 403 });
+    if (!MiddlewareUtils.isAdmin(user)) {
+      return MiddlewareUtils.forbiddenResponse('Admin access required');
     }
     
     console.log('Admin user verified, fetching users...');

@@ -1,9 +1,46 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateId } from '@/lib/utils';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
+    }
+
+    const subcategories = await prisma.subcategory.findMany({
+      where: {
+        category: {
+          userId: user.userId
+        }
+      },
+      include: {
+        category: true,
+        sites: true
+      }
+    });
+
+    return NextResponse.json(subcategories);
+  } catch (error) {
+    console.error('Error fetching subcategories:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch subcategories' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
+    }
+
     const { name, categoryId, icon = 'Folder' } = await request.json();
     
     if (!name || !categoryId) {
@@ -31,8 +68,14 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(request.url);
     const subcategoryId = searchParams.get('id');
     

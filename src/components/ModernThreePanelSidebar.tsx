@@ -60,9 +60,9 @@ export default function ModernThreePanelSidebar({
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
   const [selectedCategoryForSubcategory, setSelectedCategoryForSubcategory] = useState<string | null>(null);
 
-  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
-  const selectedSubcategoryData = selectedCategoryData?.subcategories.find(s => s.id === selectedSubcategory);
-  const sitesInSubcategory = sites.filter(site => site.subcategoryId === selectedSubcategory);
+  const selectedCategoryData = Array.isArray(categories) ? categories.find(c => c.id === selectedCategory) : null;
+  const selectedSubcategoryData = selectedCategoryData && Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.find(s => s.id === selectedSubcategory) : null;
+  const sitesInSubcategory = Array.isArray(sites) ? sites.filter(site => site.subcategoryId === selectedSubcategory) : [];
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -209,7 +209,7 @@ export default function ModernThreePanelSidebar({
           {/* Categories List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
             <div className="menu-grid-balanced">
-              {categories.map((category) => (
+              {Array.isArray(categories) ? categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => onCategorySelect(category.id)}
@@ -255,7 +255,7 @@ export default function ModernThreePanelSidebar({
                     }`} />
                   </div>
                 </button>
-              ))}
+              )) : []}
             </div>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function ModernThreePanelSidebar({
             {selectedCategoryData ? (
               selectedCategoryData.subcategories.length > 0 ? (
                 <div className="space-y-2">
-                  {selectedCategoryData.subcategories.map((subcategory) => {
+                  {Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.map((subcategory) => {
                     const sitesCount = sites.filter(site => site.subcategoryId === subcategory.id).length;
                     return (
                       <button
@@ -337,7 +337,7 @@ export default function ModernThreePanelSidebar({
                         }`} />
                       </button>
                     );
-                  })}
+                  }) : []}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
@@ -389,7 +389,7 @@ export default function ModernThreePanelSidebar({
           <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
             {selectedSubcategoryData && sitesInSubcategory.length > 0 ? (
               <div className="space-y-2">
-                {sitesInSubcategory.map((site) => (
+                {Array.isArray(sitesInSubcategory) ? sitesInSubcategory.map((site) => (
                   <button
                     key={site.id}
                     draggable
@@ -429,7 +429,7 @@ export default function ModernThreePanelSidebar({
                       )}
                     </div>
                   </button>
-                ))}
+                )) : []}
               </div>
             ) : selectedSubcategoryData ? (
               <div className="flex flex-col items-center justify-center h-full text-center">

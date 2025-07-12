@@ -9,19 +9,36 @@ export class DatabaseConnection {
   private static isInitialized = false
 
   static getInstance(): PrismaClient {
-    if (!DatabaseConnection.instance) {
-      DatabaseConnection.instance = DatabaseConnection.createInstance()
+    // Use singleton in development for better performance
+    if (process.env.NODE_ENV !== 'production') {
+      if (!DatabaseConnection.instance) {
+        DatabaseConnection.instance = DatabaseConnection.createInstance()
+      }
+      return DatabaseConnection.instance
     }
-    return DatabaseConnection.instance
+    
+    // In production (serverless), use global connection with cleanup
+    if (global.__prisma) {
+      return global.__prisma
+    }
+    
+    const client = DatabaseConnection.createInstance()
+    global.__prisma = client
+    return client
   }
 
   private static createInstance(): PrismaClient {
     console.log('🔌 Creating new Prisma client instance')
     
+    // In production, add pgbouncer compatible settings to prevent prepared statement conflicts
+    const databaseUrl = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL 
+      ? `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes('?') ? '&' : '?'}pgbouncer=true&connection_limit=1&pool_timeout=0`
+      : process.env.DATABASE_URL
+
     const client = new PrismaClient({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL
+          url: databaseUrl
         }
       },
       log: process.env.NODE_ENV === 'development' 
@@ -36,28 +53,30 @@ export class DatabaseConnection {
 
     // Connection event handlers removed for TypeScript compatibility
 
-    // Global instance için
-    if (process.env.NODE_ENV !== 'production') {
+    // Always set global in production to prevent multiple instances
+    if (process.env.NODE_ENV === 'production') {
       global.__prisma = client
     }
 
-    // Graceful shutdown
-    process.on('beforeExit', async () => {
-      console.log('🔌 Disconnecting from database...')
-      await client.$disconnect()
-    })
+    // Graceful shutdown - only in development
+    if (process.env.NODE_ENV !== 'production') {
+      process.on('beforeExit', async () => {
+        console.log('🔌 Disconnecting from database...')
+        await client.$disconnect()
+      })
 
-    process.on('SIGINT', async () => {
-      console.log('🔌 Disconnecting from database...')
-      await client.$disconnect()
-      process.exit(0)
-    })
+      process.on('SIGINT', async () => {
+        console.log('🔌 Disconnecting from database...')
+        await client.$disconnect()
+        process.exit(0)
+      })
 
-    process.on('SIGTERM', async () => {
-      console.log('🔌 Disconnecting from database...')
-      await client.$disconnect()
-      process.exit(0)
-    })
+      process.on('SIGTERM', async () => {
+        console.log('🔌 Disconnecting from database...')
+        await client.$disconnect()
+        process.exit(0)
+      })
+    }
 
     return client
   }
@@ -98,9 +117,5 @@ export class DatabaseConnection {
   }
 }
 
-// Global instance
-export const prisma = global.__prisma || DatabaseConnection.getInstance()
-
-if (process.env.NODE_ENV !== 'production') {
-  global.__prisma = prisma
-}
+// Always use singleton instance
+export const prisma = DatabaseConnection.getInstance()

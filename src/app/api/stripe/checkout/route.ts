@@ -1,20 +1,17 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const { priceId } = await request.json();
@@ -37,9 +34,9 @@ export async function POST(request: Request) {
       ],
       success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
-      customer_email: session.user.email,
+      customer_email: user.email,
       metadata: {
-        userId: session.user.id!,
+        userId: user.userId,
       },
     });
 

@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Settings, Globe, Bell, Shield, Download, Crown, UserCog } from 'lucide-react';
 // import { useTheme } from 'next-themes';
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState('en');
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportBookmarks = async () => {
-    if (session?.user?.plan !== 'PREMIUM') {
+    if (user?.plan !== 'PREMIUM') {
       alert('Premium subscription required for bookmark export');
       return;
     }
@@ -134,7 +134,7 @@ export default function SettingsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-medium text-slate-900 dark:text-slate-100">Export All Bookmarks</h3>
-                      {session?.user?.plan === 'PREMIUM' ? (
+                      {user?.plan === 'PREMIUM' ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs rounded-full">
                           <Crown className="w-3 h-3" />
                           Premium
@@ -151,9 +151,9 @@ export default function SettingsPage() {
                     </p>
                     <button
                       onClick={handleExportBookmarks}
-                      disabled={isExporting || session?.user?.plan !== 'PREMIUM'}
+                      disabled={isExporting || user?.plan !== 'PREMIUM'}
                       className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                        session?.user?.plan === 'PREMIUM' && !isExporting
+                        user?.plan === 'PREMIUM' && !isExporting
                           ? 'bg-blue-600 hover:bg-blue-700 text-white'
                           : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
                       }`}
@@ -168,7 +168,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Admin Panel */}
-          {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+          {user?.email === 'umitakdenizjob@gmail.com' && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <UserCog className="w-5 h-5 text-purple-600 dark:text-purple-400" />

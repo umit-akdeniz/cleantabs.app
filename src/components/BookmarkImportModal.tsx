@@ -345,7 +345,7 @@ export default function BookmarkImportModal({ isOpen, onClose, onImportComplete 
 
                   {/* Category Preview */}
                   <div className="space-y-3 max-h-48 overflow-y-auto">
-                    {preview.categories.map((category, catIdx) => (
+                    {Array.isArray(preview.categories) ? preview.categories.map((category, catIdx) => (
                       <div key={catIdx} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-lg">{category.icon}</span>
@@ -354,22 +354,22 @@ export default function BookmarkImportModal({ isOpen, onClose, onImportComplete 
                           </span>
                         </div>
                         <div className="space-y-1 pl-6">
-                          {category.subcategories.slice(0, 3).map((subcategory, subIdx) => (
+                          {Array.isArray(category.subcategories) ? category.subcategories.slice(0, 3).map((subcategory, subIdx) => (
                             <div key={subIdx} className="flex items-center gap-2 text-sm">
                               <span>{subcategory.icon}</span>
                               <span className="text-slate-600 dark:text-slate-400">
                                 {subcategory.name} ({subcategory.sites.length} sites)
                               </span>
                             </div>
-                          ))}
-                          {category.subcategories.length > 3 && (
+                          )) : []}
+                          {category.subcategories && category.subcategories.length > 3 && (
                             <div className="text-xs text-slate-500 dark:text-slate-400 pl-6">
                               +{category.subcategories.length - 3} more subcategories
                             </div>
                           )}
                         </div>
                       </div>
-                    ))}
+                    )) : []}
                   </div>
                 </div>
               )}

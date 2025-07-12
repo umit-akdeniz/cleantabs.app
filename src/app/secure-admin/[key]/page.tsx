@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter, useParams } from 'next/navigation';
 import { Shield, Users, UserCheck, UserX, Crown, User, Mail, Calendar, CheckCircle, XCircle, AlertTriangle, Eye, Plus, X, Folder, Globe, Hash } from 'lucide-react';
 import { validateAdminKey } from '@/lib/admin-keygen';
@@ -20,7 +20,7 @@ interface UserData {
 }
 
 export default function SecureAdminPanel() {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const key = params.key as string;
@@ -44,13 +44,13 @@ export default function SecureAdminPanel() {
   });
 
   // Admin email kontrolü
-  const isAdminEmail = session?.user?.email === 'umitakdenizjob@gmail.com';
+  const isAdminEmail = user?.email === 'umitakdenizjob@gmail.com';
   
   useEffect(() => {
-    if (status === 'loading') return;
+    if (isLoading) return;
     
     // Session kontrolü
-    if (!session || !isAdminEmail) {
+    if (!isAuthenticated || !isAdminEmail) {
       router.push('/');
       return;
     }
@@ -63,7 +63,7 @@ export default function SecureAdminPanel() {
     
     // Kullanıcıları yükle
     loadUsers();
-  }, [session, status, isAdminEmail, key, router]);
+  }, [isAuthenticated, isLoading, isAdminEmail, key, router]);
 
   const loadUsers = async () => {
     try {
@@ -224,7 +224,7 @@ export default function SecureAdminPanel() {
   };
 
   // Loading durumu
-  if (status === 'loading' || loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-lg">Loading...</div>
@@ -249,7 +249,7 @@ export default function SecureAdminPanel() {
             </div>
             <div className="text-right">
               <div className="text-sm text-purple-200">Active Admin</div>
-              <div className="text-white font-medium">{session?.user?.email}</div>
+              <div className="text-white font-medium">{user?.email}</div>
             </div>
           </div>
         </div>

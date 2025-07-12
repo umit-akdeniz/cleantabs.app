@@ -12,13 +12,13 @@ export async function POST(request: Request) {
       secure: false, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USER, // Email address
-        pass: process.env.SMTP_PASS, // App password
+        pass: process.env.SMTP_PASSWORD, // App password
       },
     });
 
     // Send email
     const info = await transporter.sendMail({
-      from: `"SiteHub Pro" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || `"CleanTabs" <${process.env.SMTP_USER}>`,
       to,
       subject,
       text,

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { parseBookmarkFile, convertToCategories, detectBookmarkFileType } from '@/lib/bookmarkImporter';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 // Generate unique ID with prefix
 function generateId(prefix: string): string {
@@ -56,18 +55,10 @@ async function checkPlanLimits(userId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     const formData = await request.formData();
@@ -119,7 +110,7 @@ export async function POST(request: NextRequest) {
     const categories = convertToCategories(parsed, browserType);
 
     // Check plan limits
-    const planInfo = await checkPlanLimits(user.id);
+    const planInfo = await checkPlanLimits(user.userId);
     const newCategoriesCount = categories.length;
     const newSubcategoriesCount = categories.reduce((sum, cat) => sum + cat.subcategories.length, 0);
     const newSitesCount = categories.reduce((sum, cat) => 
@@ -155,7 +146,7 @@ export async function POST(request: NextRequest) {
             id: generateId('cat-'),
             name: category.name,
             icon: category.icon,
-            userId: user.id,
+            userId: user.userId,
             order: planInfo.current.categories + categoriesCreated
           }
         });

@@ -1,8 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
-export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
+    }
+
     const { id } = await context.params;
     const body = await request.json();
     const { name, url, description, color, favicon, personalNotes, tags, reminderEnabled, subcategoryId, subLinks, lastChecked, customInitials } = body;
@@ -77,8 +84,14 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   }
 }
 
-export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
+    }
+
     const { id } = await context.params;
 
     await prisma.site.delete({

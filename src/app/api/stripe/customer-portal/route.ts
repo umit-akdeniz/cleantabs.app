@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 import { createCustomerPortalSession } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   // Return early if Stripe is not configured
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
@@ -14,22 +13,19 @@ export async function POST() {
   }
   
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     // Get user with Stripe customer ID
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email },
       select: { stripeCustomerId: true }
     });
 
-    if (!user?.stripeCustomerId) {
+    if (!dbUser?.stripeCustomerId) {
       return NextResponse.json(
         { error: 'No active subscription found' },
         { status: 400 }
@@ -39,7 +35,7 @@ export async function POST() {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://cleantabs.app';
 
     const portalSession = await createCustomerPortalSession({
-      customerId: user.stripeCustomerId,
+      customerId: dbUser.stripeCustomerId,
       returnUrl: `${baseUrl}/account`,
     });
 

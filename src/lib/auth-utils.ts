@@ -1,7 +1,5 @@
 'use client';
 
-import { signOut as nextAuthSignOut } from 'next-auth/react';
-
 export function clearAllStorageData() {
   if (typeof window === 'undefined') return;
   
@@ -14,10 +12,8 @@ export function clearAllStorageData() {
     
     // Clear specific auth-related items
     const authKeys = [
-      'next-auth.session-token',
-      'next-auth.callback-url',
-      'next-auth.csrf-token',
-      'next-auth.pkce.code_verifier',
+      'cleantabs_auth_token',
+      'cleantabs_refresh_token',
       'admin_access_key',
       'user_preferences',
       'dashboard_settings',
@@ -53,16 +49,8 @@ export async function performCompleteSignOut(callbackUrl: string = '/auth/signin
     // Clear all storage first
     clearAllStorageData();
     
-    // Sign out with NextAuth
-    await nextAuthSignOut({
-      callbackUrl,
-      redirect: true
-    });
-    
-    // Force reload to ensure clean state
-    setTimeout(() => {
-      window.location.href = callbackUrl;
-    }, 100);
+    // Force redirect to sign in page
+    window.location.href = callbackUrl;
     
   } catch (error) {
     console.error('Error during sign out:', error);

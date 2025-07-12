@@ -3,24 +3,21 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Menu, X, User, LogOut, Shield } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function BasicNav() {
-  const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const isAuthenticated = !!session;
+  const isAuthenticated = !!user;
 
   const handleSignOut = async () => {
     setIsUserMenuOpen(false);
-    await signOut({ 
-      callbackUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://cleantabs.app',
-      redirect: true 
-    });
+    await logout();
   };
 
   // Close user menu when clicking outside
@@ -80,7 +77,7 @@ export default function BasicNav() {
                 </Link>
                 
                 {/* Admin Button - Only for umitakdenizjob@gmail.com */}
-                {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+                {user?.email === 'umitakdenizjob@gmail.com' && (
                   <button 
                     onClick={async () => {
                       try {
@@ -115,10 +112,10 @@ export default function BasicNav() {
                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
                       <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700">
                         <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {session?.user?.name || 'User'}
+                          {user?.name || 'User'}
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {session?.user?.email}
+                          {user?.email}
                         </div>
                       </div>
                       
@@ -144,7 +141,7 @@ export default function BasicNav() {
                       </Link>
                       
                       {/* Admin Menu Item - Only for admin user */}
-                      {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+                      {user?.email === 'umitakdenizjob@gmail.com' && (
                         <button 
                           onClick={async () => {
                             setIsUserMenuOpen(false);
@@ -220,7 +217,7 @@ export default function BasicNav() {
                   <Link href="/dashboard" className="block px-3 py-2 bg-blue-500 text-white rounded-lg mx-3 text-center">Dashboard</Link>
                   <Link href="/account" className="block px-3 py-2 text-gray-600 dark:text-gray-300">Account</Link>
                   <Link href="/settings" className="block px-3 py-2 text-gray-600 dark:text-gray-300">Settings</Link>
-                  {session?.user?.email === 'umitakdenizjob@gmail.com' && (
+                  {user?.email === 'umitakdenizjob@gmail.com' && (
                     <button 
                       onClick={async () => {
                         setIsMobileMenuOpen(false);

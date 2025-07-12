@@ -153,8 +153,8 @@ export default function AddSiteModal({ isOpen, onClose, onSave, editingSite, cat
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const selectedCategory = categories.find(c => c.id === categoryId);
-  const availableSubcategories = selectedCategory?.subcategories || [];
+  const selectedCategory = Array.isArray(categories) ? categories.find(c => c.id === categoryId) : null;
+  const availableSubcategories = selectedCategory && Array.isArray(selectedCategory.subcategories) ? selectedCategory.subcategories : [];
 
   const predefinedColors = [
     '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b', 

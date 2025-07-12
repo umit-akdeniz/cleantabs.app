@@ -27,8 +27,8 @@ export default function MobileLayout({
 }: MobileLayoutProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(selectedCategory);
 
-  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
-  const sitesInSubcategory = sites.filter(site => site.subcategoryId === selectedSubcategory);
+  const selectedCategoryData = Array.isArray(categories) ? categories.find(c => c.id === selectedCategory) : null;
+  const sitesInSubcategory = Array.isArray(sites) ? sites.filter(site => site.subcategoryId === selectedSubcategory) : [];
 
   const handleCategoryClick = (categoryId: string) => {
     if (expandedCategory === categoryId) {
@@ -49,7 +49,7 @@ export default function MobileLayout({
             Categories
           </h2>
           <div className="space-y-2">
-            {categories.map((category) => (
+            {Array.isArray(categories) ? categories.map((category) => (
               <div key={category.id}>
                 {/* Category Button */}
                 <button
@@ -81,7 +81,7 @@ export default function MobileLayout({
                 {/* Subcategories */}
                 {expandedCategory === category.id && category.subcategories && (
                   <div className="mt-3 ml-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {category.subcategories.map((subcategory) => {
+                    {Array.isArray(category.subcategories) ? category.subcategories.map((subcategory) => {
                       const sitesCount = sites.filter(site => site.subcategoryId === subcategory.id).length;
                       return (
                         <button
@@ -102,11 +102,11 @@ export default function MobileLayout({
                           </div>
                         </button>
                       );
-                    })}
+                    }) : []}
                   </div>
                 )}
               </div>
-            ))}
+            )) : []}
           </div>
         </div>
       </div>
@@ -117,11 +117,11 @@ export default function MobileLayout({
           <div className="p-4">
             <h3 className="text-md font-medium text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
               <div className="w-1.5 h-5 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
-              {selectedCategoryData?.subcategories.find(s => s.id === selectedSubcategory)?.name} Sites
+              {selectedCategoryData && Array.isArray(selectedCategoryData.subcategories) ? selectedCategoryData.subcategories.find(s => s.id === selectedSubcategory)?.name : 'Sites'} Sites
             </h3>
             <div className="overflow-x-auto">
               <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
-                {sitesInSubcategory.map((site) => (
+                {Array.isArray(sitesInSubcategory) ? sitesInSubcategory.map((site) => (
                   <button
                     key={site.id}
                     onClick={() => onSiteSelect(site)}
@@ -156,7 +156,7 @@ export default function MobileLayout({
                       </div>
                     </div>
                   </button>
-                ))}
+                )) : []}
               </div>
             </div>
           </div>

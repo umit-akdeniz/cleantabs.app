@@ -1,69 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function PUT(request: NextRequest) {
-  let siteId: string | undefined;
-  let targetSubcategoryId: string | undefined;
-  
   try {
-    const body = await request.json();
-    siteId = body.siteId;
-    targetSubcategoryId = body.targetSubcategoryId;
-    console.log('Move site request:', { siteId, targetSubcategoryId });
-
-    if (!siteId || !targetSubcategoryId) {
-      console.log('Missing fields:', { siteId, targetSubcategoryId });
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
-    // Check if site and target subcategory exist
-    const site = await prisma.site.findUnique({
-      where: { id: siteId }
-    });
+    const { siteId, newSubcategoryId } = await request.json();
 
-    const targetSubcategory = await prisma.subcategory.findUnique({
-      where: { id: targetSubcategoryId },
-      include: {
-        category: true
+    if (!siteId || !newSubcategoryId) {
+      return NextResponse.json(
+        { error: 'Site ID and new subcategory ID are required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the site belongs to the user
+    const site = await prisma.site.findFirst({
+      where: {
+        id: siteId,
+        subcategory: {
+          category: {
+            userId: user.userId
+          }
+        }
       }
     });
 
-    if (!site || !targetSubcategory) {
-      console.log('Site or target subcategory not found:', { 
-        siteFound: !!site, 
-        targetSubcategoryFound: !!targetSubcategory,
-        siteId,
-        targetSubcategoryId 
-      });
-      return NextResponse.json({ error: 'Site or target subcategory not found' }, { status: 404 });
+    if (!site) {
+      return NextResponse.json(
+        { error: 'Site not found or unauthorized' },
+        { status: 404 }
+      );
     }
 
-    // Update the site's subcategory
+    // Verify the new subcategory belongs to the user
+    const newSubcategory = await prisma.subcategory.findFirst({
+      where: {
+        id: newSubcategoryId,
+        category: {
+          userId: user.userId
+        }
+      }
+    });
+
+    if (!newSubcategory) {
+      return NextResponse.json(
+        { error: 'Target subcategory not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    // Move the site
     const updatedSite = await prisma.site.update({
       where: { id: siteId },
-      data: { 
-        subcategoryId: targetSubcategoryId
-      },
+      data: { subcategoryId: newSubcategoryId },
       include: {
-        subLinks: true
+        tags: true,
+        subLinks: true,
+        subcategory: {
+          include: {
+            category: true
+          }
+        }
       }
     });
 
-    console.log('Site moved successfully:', { siteId, targetSubcategoryId, updatedSite: updatedSite.id });
     return NextResponse.json(updatedSite);
   } catch (error) {
-    console.log('Error moving site:', error);
-    console.log('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      siteId,
-      targetSubcategoryId
-    });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error moving site:', error);
+    return NextResponse.json(
+      { error: 'Failed to move site' },
+      { status: 500 }
+    );
   }
 }
 
-// Test endpoint
 export async function GET() {
-  return NextResponse.json({ message: 'Move API is working', timestamp: new Date().toISOString() });
+  return NextResponse.json({ message: 'Move site API is working' });
 }

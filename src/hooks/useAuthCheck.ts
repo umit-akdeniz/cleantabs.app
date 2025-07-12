@@ -1,32 +1,29 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/context';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function useAuthCheck() {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (isLoading) return;
 
-    // Session yoksa veya geçersizse çıkış yap
-    if (status === 'unauthenticated' || !session) {
+    // User yoksa veya geçersizse
+    if (!isAuthenticated || !user) {
       return;
     }
 
-    // Session var ama user bilgileri eksikse çıkış yap
-    if (session && (!session.user || !session.user.email)) {
-      console.log('Invalid session detected, signing out');
-      signOut({
-        callbackUrl: '/auth/signin',
-        redirect: true
-      });
+    // User var ama bilgileri eksikse çıkış yap
+    if (user && !user.email) {
+      console.log('Invalid user detected, logging out');
+      logout();
       return;
     }
 
-  }, [session, status, router]);
+  }, [user, isAuthenticated, isLoading, logout, router]);
 
-  return { session, status };
+  return { user, isAuthenticated, isLoading };
 }

@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendBookmarkExport } from '@/lib/email';
+import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await MiddlewareUtils.getAuthenticatedUser(request);
     
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return MiddlewareUtils.unauthorizedResponse();
     }
 
     // Check if user has premium plan
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user || user.plan !== 'PREMIUM') {
+    if (user.plan !== 'PREMIUM') {
       return NextResponse.json(
         { error: 'Premium subscription required' },
         { status: 403 }
@@ -29,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch all user's categories, subcategories, and sites
     const categories = await prisma.category.findMany({
-      where: { userId: user.id },
+      where: { userId: user.userId },
       include: {
         subcategories: {
           include: {
@@ -58,7 +50,7 @@ export async function POST(request: NextRequest) {
     }, 0);
 
     // Send email with bookmark export
-    const result = await sendBookmarkExport(session.user.email, htmlContent, totalBookmarks);
+    const result = await sendBookmarkExport(user.email, htmlContent, totalBookmarks);
 
     if (!result.success) {
       return NextResponse.json(
