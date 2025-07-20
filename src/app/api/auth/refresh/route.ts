@@ -43,6 +43,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     resetPasswordExpiry: user.resetPasswordExpiry || null,
     verificationToken: user.verificationToken,
     verificationTokenExpiry: user.verificationTokenExpiry || null,
+    verificationCode: user.verificationCode,
+    verificationCodeExpiry: user.verificationCodeExpiry || null,
     stripeCustomerId: user.stripeCustomerId,
     stripeSubscriptionId: user.stripeSubscriptionId
   })

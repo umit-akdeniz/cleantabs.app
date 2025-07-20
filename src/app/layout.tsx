@@ -52,19 +52,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {
               try {
                 var theme = localStorage.getItem('theme');
-                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark');
+                var isDark = theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var html = document.documentElement;
+                if (isDark) {
+                  html.classList.add('dark');
                 } else {
-                  document.documentElement.classList.remove('dark');
+                  html.classList.remove('dark');
                 }
-              } catch (e) {}
+              } catch (e) {
+                console.warn('Theme initialization failed:', e);
+              }
             })();
           `
         }} />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth } from '@/lib/auth/context';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 interface SessionValidatorProps {
@@ -9,32 +9,20 @@ interface SessionValidatorProps {
 }
 
 export default function SessionValidator({ children }: SessionValidatorProps) {
-  const { user, logout, isLoading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
-
-    // User yoksa veya geçersizse
-    if (!user) {
-      return;
-    }
+    if (status === 'loading') return;
 
     // User var ama bilgileri eksikse
-    if (user && !user.email) {
-      console.log('Invalid user detected, logging out and clearing storage');
-      
-      // localStorage'ı temizle
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-        sessionStorage.clear();
-      }
-      
-      logout();
+    if (session?.user && !session.user.email) {
+      console.log('Invalid user detected, logging out');
+      signOut({ callbackUrl: '/auth/signin' });
       return;
     }
 
-  }, [user, isLoading, logout, router]);
+  }, [session, status, router]);
 
   return <>{children}</>;
 }

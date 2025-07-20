@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
         description: description || `Reminder to check: ${site.name}`,
         reminderDate: new Date(reminderDate),
         reminderType: 'NOTIFICATION',
-        siteId
+        siteId,
+        userId: site.subcategory.category.user.id
       }
     });
 

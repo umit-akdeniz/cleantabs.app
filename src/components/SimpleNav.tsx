@@ -3,22 +3,24 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
-import { useAuth } from '@/lib/auth/context';
+import { useSession, signOut } from 'next-auth/react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function SimpleNav() {
-  const { user, logout, isLoading } = useAuth();
+  const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProduct, setShowProduct] = useState(false);
   const [showDevelopers, setShowDevelopers] = useState(false);
   const [showCompany, setShowCompany] = useState(false);
   const [showUser, setShowUser] = useState(false);
 
-  const isAuthenticated = !!user;
+  const user = session?.user;
+  const isAuthenticated = status === 'authenticated';
+  const isLoading = status === 'loading';
 
   const handleSignOut = async () => {
-    await logout();
+    await signOut({ callbackUrl: '/auth/signin' });
   };
 
   // Close dropdowns when clicking outside

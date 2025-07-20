@@ -180,7 +180,7 @@ export default function ModernThreePanelSidebar({
         <div className="w-56 md:w-64 lg:w-80 border-r border-brand-200/20 dark:border-brand-700/30 flex flex-col bg-white/98 dark:bg-brand-900/98 backdrop-blur-sm shadow-subtle max-h-full">
           {/* Header */}
           <div className="h-20 p-4 border-b border-brand-200/30 dark:border-brand-700/50 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Kategoriler</h2>
+            <h2 className="text-base font-semibold text-brand-900 dark:text-brand-100">Categories</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenCategoryModal}
@@ -232,7 +232,7 @@ export default function ModernThreePanelSidebar({
                       : 'bg-transparent'
                   }`}></div>
                   <div className="flex-1 ml-3">
-                    <div className="font-medium text-sm">{category.name.charAt(0).toUpperCase() + category.name.slice(1).toLowerCase()}</div>
+                    <div className="font-medium text-sm">{category.name ? category.name.charAt(0).toUpperCase() + category.name.slice(1).toLowerCase() : 'Unnamed Category'}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {category.subcategories?.length || 0} subcategories
                     </div>
@@ -267,7 +267,7 @@ export default function ModernThreePanelSidebar({
             {selectedCategoryData ? (
               <div>
                 <h2 className="text-base font-medium text-brand-900 dark:text-brand-100">
-                  Alt Kategoriler
+                  Subcategories
                 </h2>
                 <p className="text-xs text-brand-500 dark:text-brand-400">
                   {selectedCategoryData.name}
@@ -275,8 +275,8 @@ export default function ModernThreePanelSidebar({
               </div>
             ) : (
               <div>
-                <h2 className="text-base font-medium text-brand-900 dark:text-brand-100">Alt Kategoriler</h2>
-                <p className="text-xs text-brand-500 dark:text-brand-400">Kategori seçin</p>
+                <h2 className="text-base font-medium text-brand-900 dark:text-brand-100">Subcategories</h2>
+                <p className="text-xs text-brand-500 dark:text-brand-400">Select category</p>
               </div>
             )}
             {selectedCategoryData && (
@@ -327,7 +327,7 @@ export default function ModernThreePanelSidebar({
                             : 'bg-transparent'
                         }`}></div>
                         <div className="flex-1 ml-3">
-                          <div className="font-medium text-sm">{subcategory.name.charAt(0).toUpperCase() + subcategory.name.slice(1).toLowerCase()}</div>
+                          <div className="font-medium text-sm">{subcategory.name ? subcategory.name.charAt(0).toUpperCase() + subcategory.name.slice(1).toLowerCase() : 'Unnamed Subcategory'}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {sitesCount} sites
                           </div>
@@ -344,9 +344,9 @@ export default function ModernThreePanelSidebar({
                   <div className="w-12 h-12 bg-brand-100 dark:bg-brand-800 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <FolderOpen className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                   </div>
-                  <p className="text-brand-500 dark:text-brand-400 mb-1 font-medium text-sm">Alt Kategori Yok</p>
+                  <p className="text-brand-500 dark:text-brand-400 mb-1 font-medium text-sm">No Subcategories</p>
                   <p className="text-xs text-brand-400 dark:text-brand-500">
-                    Üst menüdeki + butonunu kullanarak alt kategori ekleyin
+                    Use the + button above to add subcategories
                   </p>
                 </div>
               )
@@ -371,7 +371,7 @@ export default function ModernThreePanelSidebar({
             {selectedSubcategoryData ? (
               <div>
                 <h2 className="text-base font-normal text-brand-900 dark:text-brand-100">
-                  Siteler
+                  Sites
                 </h2>
                 <p className="text-xs text-brand-500 dark:text-brand-400">
                   {selectedSubcategoryData.name} • {sitesInSubcategory.length} site
@@ -379,8 +379,8 @@ export default function ModernThreePanelSidebar({
               </div>
             ) : (
               <div>
-                <h2 className="text-base font-normal text-brand-900 dark:text-brand-100">Siteler</h2>
-                <p className="text-xs text-brand-500 dark:text-brand-400">Alt kategori seçin</p>
+                <h2 className="text-base font-normal text-brand-900 dark:text-brand-100">Sites</h2>
+                <p className="text-xs text-brand-500 dark:text-brand-400">Select subcategory</p>
               </div>
             )}
           </div>
@@ -418,7 +418,7 @@ export default function ModernThreePanelSidebar({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-xs text-brand-900 dark:text-brand-100 truncate">
-                          {site.name.charAt(0).toUpperCase() + site.name.slice(1).toLowerCase()}
+                          {site.name ? site.name.charAt(0).toUpperCase() + site.name.slice(1).toLowerCase() : 'Unnamed Site'}
                         </div>
                         <div className="text-xs text-brand-500 dark:text-brand-400 truncate">
                           {site.url.replace(/^https?:\/\//, '')}
@@ -429,7 +429,7 @@ export default function ModernThreePanelSidebar({
                       )}
                     </div>
                   </button>
-                )) : []}
+              )) : []}
               </div>
             ) : selectedSubcategoryData ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -471,12 +471,12 @@ export default function ModernThreePanelSidebar({
         }}
         categories={categories}
         onAddCategory={(name) => {
-          // This will be handled by parent component
           console.log('Add category:', name);
+          onAddCategory?.(name);
         }}
         onAddSubcategory={(categoryId, name) => {
-          // This will be handled by parent component
           console.log('Add subcategory:', categoryId, name);
+          onAddSubcategory?.(categoryId, name);
         }}
         selectedCategoryId={selectedCategoryForSubcategory}
       />

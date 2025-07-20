@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendSiteReminder, sendActivityReminder, sendWeeklyDigest } from '@/lib/email'
-import { prisma } from '@/lib/auth/database'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { MiddlewareUtils } from '@/lib/auth/middleware-utils'
+import { getAuthUser } from '@/lib/simple-auth'
 
 const siteReminderSchema = z.object({
   email: z.string().email(),
@@ -36,28 +36,27 @@ const createReminderSchema = z.object({
   reminderDate: z.string(),
   reminderType: z.enum(['NOTIFICATION', 'EMAIL', 'BOTH']),
   siteId: z.string().min(1),
+  isRecurring: z.boolean().optional(),
+  recurringType: z.enum(['daily', 'weekly', 'monthly']).optional(),
 })
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request)
+    const user = getAuthUser(request)
     
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse()
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 })
     }
 
     console.log('User found:', user.email) // Debug log
 
-    // Get user's reminders from database
+    // Get user's reminders from database - ONLY their reminders
     const reminders = await prisma.reminder.findMany({
       where: {
-        site: {
-          subcategory: {
-            category: {
-              userId: user.userId
-            }
-          }
-        }
+        userId: user.userId
       },
       include: {
         site: {
@@ -108,28 +107,74 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Headers:', Object.fromEntries(request.headers.entries()))
     
-    const user = await MiddlewareUtils.getAuthenticatedUser(request)
+    const user = getAuthUser(request)
     
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse()
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log('📨 Reminder POST body:', body)
     
     // Check if this is a direct reminder creation (no type field)
     if (!body.type && body.siteId) {
+      console.log('🔄 Parsing reminder data with schema')
       const reminderData = createReminderSchema.parse(body)
       
       console.log('User found:', user.email)
 
-      // Create reminder in database
+      // Verify user owns the site before creating reminder
+      const site = await prisma.site.findFirst({
+        where: {
+          id: reminderData.siteId,
+          subcategory: {
+            category: {
+              userId: user.userId
+            }
+          }
+        }
+      });
+
+      if (!site) {
+        return NextResponse.json({
+          success: false,
+          error: 'Site not found or access denied'
+        }, { status: 404 });
+      }
+
+      // Calculate next reminder date for recurring reminders
+      let nextReminderDate = null;
+      if (reminderData.isRecurring && reminderData.recurringType) {
+        const baseDate = new Date(reminderData.reminderDate);
+        switch (reminderData.recurringType) {
+          case 'daily':
+            nextReminderDate = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+            break;
+          case 'weekly':
+            nextReminderDate = new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'monthly':
+            nextReminderDate = new Date(baseDate);
+            nextReminderDate.setMonth(nextReminderDate.getMonth() + 1);
+            break;
+        }
+      }
+
+      // Create reminder in database with userId
       const reminder = await prisma.reminder.create({
         data: {
           title: reminderData.title,
           description: reminderData.description || '',
           reminderDate: new Date(reminderData.reminderDate),
           reminderType: reminderData.reminderType,
-          siteId: reminderData.siteId
+          siteId: reminderData.siteId,
+          userId: user.userId,
+          isRecurring: reminderData.isRecurring || false,
+          recurringType: reminderData.recurringType?.toUpperCase() as any,
+          nextReminder: nextReminderDate
         }
       })
 
@@ -191,17 +236,24 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Reminder API error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    })
     
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
         success: false, 
-        error: error.errors[0].message 
+        error: error.errors[0].message,
+        details: error.errors
       }, { status: 400 })
     }
 
     return NextResponse.json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

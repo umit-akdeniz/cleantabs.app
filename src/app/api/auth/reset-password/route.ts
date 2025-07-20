@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AuthDatabase } from '@/lib/auth/database'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import bcrypt from 'bcryptjs'
 
 export const runtime = 'nodejs'
 
@@ -14,28 +15,42 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { token, password } = resetPasswordSchema.parse(body)
 
-    const authDb = AuthDatabase.getInstance()
+    console.log('🔄 Password reset request with token:', token.substring(0, 8) + '...');
     
     // Find user by reset token
-    const user = await authDb.findUserByResetToken(token)
+    const user = await prisma.user.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpiry: {
+          gte: new Date() // Token must not be expired
+        }
+      }
+    })
     
     if (!user) {
+      console.log('❌ Invalid or expired reset token');
       return NextResponse.json({ 
         success: false, 
         error: 'Invalid or expired reset token' 
       }, { status: 400 })
     }
 
-    // Check if token is expired
-    if (user.resetPasswordExpiry && user.resetPasswordExpiry < new Date()) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Reset token has expired' 
-      }, { status: 400 })
-    }
+    console.log('✅ Valid reset token found for user:', user.email);
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     // Update password and clear reset token
-    await authDb.updatePasswordAndClearResetToken(user.id, password)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpiry: null
+      }
+    })
+
+    console.log('✅ Password updated successfully for user:', user.email);
 
     return NextResponse.json({ 
       success: true, 

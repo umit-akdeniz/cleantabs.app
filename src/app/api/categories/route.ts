@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateId } from '@/lib/utils';
-import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
-import { APIErrorHandler, withErrorHandler } from '@/lib/api/error-handler';
-import { CacheManager } from '@/lib/cache/cache-manager';
-import { z } from 'zod';
+import { getAuthUser } from '@/lib/simple-auth';
+import { CreateCategorySchema } from '@/schemas/category';
 
-export const GET = withErrorHandler(async (request: NextRequest) => {
-  const user = await MiddlewareUtils.getAuthenticatedUser(request);
-  
-  if (!user) {
-    return APIErrorHandler.unauthorized();
-  }
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getAuthUser(request);
+    
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
+    }
 
-  // Try cache first
-  const cacheKey = CacheManager.getUserCacheKey(user.userId, 'categories');
-  const cached = CacheManager.get(cacheKey);
-  
-  if (cached) {
-    return APIErrorHandler.success(cached);
-  }
+  // Skip cache completely for debugging
+  console.log('🔍 Getting categories for user:', user.userId);
 
   const categories = await prisma.category.findMany({
     where: { userId: user.userId },
@@ -40,19 +36,19 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     }
   });
 
-  // Transform data to match the expected format
-  const transformedCategories = Array.isArray(categories) ? categories.map(category => ({
-    id: category.id,
-    name: category.name,
-    icon: category.icon,
-    subcategories: Array.isArray(category.subcategories) ? category.subcategories.map(sub => ({
-      id: sub.id,
-      name: sub.name,
-      icon: sub.icon,
-      items: Array.isArray(sub.sites) ? sub.sites.map(site => ({
-        id: site.id,
-        name: site.name,
-        url: site.url,
+  // Transform data to match the expected format with safe property access
+  const transformedCategories = Array.isArray(categories) ? categories.filter(category => category && category.name).map(category => ({
+    id: category.id || '',
+    name: category.name || 'Unnamed Category',
+    icon: category.icon || 'Folder',
+    subcategories: Array.isArray(category.subcategories) ? category.subcategories.filter(sub => sub && sub.name).map(sub => ({
+      id: sub.id || '',
+      name: sub.name || 'Unnamed Subcategory',
+      icon: sub.icon || 'Folder',
+      items: Array.isArray(sub.sites) ? sub.sites.filter(site => site && site.name).map(site => ({
+        id: site.id || '',
+        name: site.name || 'Unnamed Site',
+        url: site.url || '',
         description: site.description,
         color: site.color,
         favicon: site.favicon,
@@ -69,79 +65,106 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     })) : []
   })) : [];
 
-  // Cache the result
-  CacheManager.set(cacheKey, transformedCategories, {
-    ttl: 10 * 60 * 1000, // 10 minutes
-    tags: ['categories', `user:${user.userId}`]
-  });
+  console.log('📊 Returning categories:', transformedCategories.length);
 
-  return APIErrorHandler.success(transformedCategories);
-});
-
-const createCategorySchema = z.object({
-  name: z.string().min(1, 'Category name is required').max(50, 'Category name too long'),
-  icon: z.string().optional().default('Folder')
-});
-
-export const POST = withErrorHandler(async (request: NextRequest) => {
-  const user = await MiddlewareUtils.getAuthenticatedUser(request);
+  return NextResponse.json(transformedCategories);
   
-  if (!user) {
-    return APIErrorHandler.unauthorized();
+  } catch (error) {
+    console.error('Categories GET error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Server error'
+    }, { status: 500 });
   }
+}
 
-  const body = await request.json();
-  const { name, icon } = createCategorySchema.parse(body);
+// Schema is imported from /schemas/category.ts
 
-  const category = await prisma.category.create({
-    data: {
-      name,
-      icon,
-      userId: user.userId
-    },
-    include: {
-      subcategories: true
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getAuthUser(request);
+    
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
-  });
 
-  // Invalidate user's categories cache
-  CacheManager.clearByTags([`user:${user.userId}`, 'categories']);
+    const body = await request.json();
+    const { name, icon } = CreateCategorySchema.parse(body);
 
-  return APIErrorHandler.success(category, 201);
-});
+    const category = await prisma.category.create({
+      data: {
+        name,
+        icon: icon || 'Folder',
+        userId: user.userId
+      },
+      include: {
+        subcategories: true
+      }
+    });
 
-export const DELETE = withErrorHandler(async (request: NextRequest) => {
-  const user = await MiddlewareUtils.getAuthenticatedUser(request);
-  
-  if (!user) {
-    return APIErrorHandler.unauthorized();
+    console.log('✅ Category created successfully');
+
+    return NextResponse.json(category, { status: 201 });
+    
+  } catch (error) {
+    console.error('Categories POST error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Server error'
+    }, { status: 500 });
   }
+}
 
-  const { searchParams } = new URL(request.url);
-  const categoryId = searchParams.get('id');
-  
-  if (!categoryId) {
-    return APIErrorHandler.badRequest('Category ID is required');
-  }
-
-  // Verify ownership before deletion
-  const category = await prisma.category.findFirst({
-    where: { 
-      id: categoryId,
-      userId: user.userId 
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getAuthUser(request);
+    
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
-  });
 
-  if (!category) {
-    return APIErrorHandler.notFound('Category');
+    const { searchParams } = new URL(request.url);
+    const categoryId = searchParams.get('id');
+    
+    if (!categoryId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Category ID is required'
+      }, { status: 400 });
+    }
+
+    // Verify ownership before deletion
+    const category = await prisma.category.findFirst({
+      where: { 
+        id: categoryId,
+        userId: user.userId 
+      }
+    });
+
+    if (!category) {
+      return NextResponse.json({
+        success: false,
+        error: 'Category not found'
+      }, { status: 404 });
+    }
+
+    await prisma.category.delete({
+      where: { id: categoryId }
+    });
+
+    return NextResponse.json({ success: true });
+    
+  } catch (error) {
+    console.error('Categories DELETE error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Server error'
+    }, { status: 500 });
   }
-
-  await prisma.category.delete({
-    where: { id: categoryId }
-  });
-
-  // Invalidate user's cache
-  CacheManager.clearByTags([`user:${user.userId}`, 'categories', 'sites']);
-
-  return APIErrorHandler.success({ success: true });
-});
+}

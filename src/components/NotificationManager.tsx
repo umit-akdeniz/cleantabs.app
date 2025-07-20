@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth } from '@/lib/auth/context';
-import { authClient } from '@/lib/auth/client';
+import { useSession } from 'next-auth/react';
 
 export default function NotificationManager() {
-  const { isAuthenticated } = useAuth();
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated';
 
   useEffect(() => {
     // Only register service worker and check notifications if user is authenticated
@@ -26,13 +26,10 @@ export default function NotificationManager() {
     // Check for due reminders every 5 minutes
     const checkReminders = async () => {
       try {
-        // Get token from auth client
-        const tokens = authClient.getTokens();
-        if (!tokens) return;
+        if (!session) return;
 
         const response = await fetch('/api/check-reminders', {
           headers: {
-            'Authorization': `Bearer ${tokens.accessToken}`,
             'Content-Type': 'application/json'
           }
         });
@@ -65,7 +62,7 @@ export default function NotificationManager() {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, session]);
 
   return null;
 }

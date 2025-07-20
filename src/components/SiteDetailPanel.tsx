@@ -113,7 +113,7 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
     if (site?.customInitials) return site.customInitials.slice(0, 2).toUpperCase();
     if (customInitials) return customInitials.slice(0, 2).toUpperCase();
     if (site) {
-      return site.name.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 2);
+      return site.name ? site.name.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 2) : 'UN';
     }
     return '';
   };
@@ -310,6 +310,8 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
     description: string;
     reminderDate: string;
     reminderType: 'NOTIFICATION' | 'EMAIL' | 'BOTH';
+    isRecurring?: boolean;
+    recurringType?: 'daily' | 'weekly' | 'monthly';
   }) => {
     try {
       console.log('Creating reminder with data:', reminderData, 'siteId:', site?.id);
@@ -344,6 +346,14 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
       } else {
         const errorData = await response.text();
         console.error('Failed to create reminder:', response.status, errorData);
+        
+        // Try to parse error response
+        try {
+          const errorJson = JSON.parse(errorData);
+          console.error('Error details:', errorJson);
+        } catch (e) {
+          console.error('Could not parse error response:', errorData);
+        }
       }
     } catch (error) {
       console.error('Error saving reminder:', error);
@@ -421,7 +431,7 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
             </div>
             <div>
               <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-xl">
-                {site.name.charAt(0).toUpperCase() + site.name.slice(1).toLowerCase()}
+                {site.name ? site.name.charAt(0).toUpperCase() + site.name.slice(1).toLowerCase() : 'Unnamed Site'}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 {site.url.replace(/^https?:\/\//, '')}

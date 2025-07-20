@@ -214,7 +214,12 @@ class AuthClient {
     if (!tokens) return null
 
     try {
-      const response = await fetch('/api/auth/me', {
+      // For simple tokens, use simple-me endpoint
+      const endpoint = tokens.accessToken.startsWith('simple_token_') 
+        ? '/api/auth/simple-me'
+        : '/api/auth/me'
+
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${tokens.accessToken}`,
         },
@@ -225,7 +230,11 @@ class AuthClient {
         const newTokens = await this.refreshToken()
         if (newTokens) {
           // Retry with new token
-          const retryResponse = await fetch('/api/auth/me', {
+          const retryEndpoint = newTokens.accessToken.startsWith('simple_token_') 
+            ? '/api/auth/simple-me'
+            : '/api/auth/me'
+            
+          const retryResponse = await fetch(retryEndpoint, {
             headers: {
               'Authorization': `Bearer ${newTokens.accessToken}`,
             },
@@ -271,11 +280,17 @@ class AuthClient {
     const tokens = this.getTokens()
     if (!tokens) return true
 
+    // Handle simple tokens (these don't expire for now)
+    if (tokens.accessToken.startsWith('simple_token_')) {
+      return false
+    }
+
     try {
-      // Simple check - in a real app you'd decode the JWT
+      // JWT token check
       const payload = JSON.parse(atob(tokens.accessToken.split('.')[1]))
       return Date.now() >= payload.exp * 1000
     } catch {
+      // If we can't parse it, assume it's expired
       return true
     }
   }

@@ -84,9 +84,12 @@ model User {
   stripeSubscriptionId    String?    @unique
   verificationToken       String?    @unique
   verificationTokenExpiry DateTime?
+  verificationCode        String?
+  verificationCodeExpiry  DateTime?
   accounts                Account[]
   categories              Category[]
   sessions                Session[]
+  reminders               Reminder[]
 }
 
 model Account {
@@ -124,18 +127,22 @@ model VerificationToken {
 }
 
 model Reminder {
-  id           String       @id @default(cuid())
+  id           String        @id @default(cuid())
   title        String
   description  String?
   reminderDate DateTime
-  reminderType ReminderType @default(NOTIFICATION)
-  emailSent    Boolean      @default(false)
-  completed    Boolean      @default(false)
+  reminderType ReminderType  @default(NOTIFICATION)
+  emailSent    Boolean       @default(false)
+  completed    Boolean       @default(false)
   siteId       String
-  userId       String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  site         Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  userId       String
+  isRecurring  Boolean       @default(false)
+  recurringType RecurringType?
+  nextReminder DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Plan {
@@ -147,4 +154,10 @@ enum ReminderType {
   NOTIFICATION
   EMAIL
   BOTH
+}
+
+enum RecurringType {
+  DAILY
+  WEEKLY
+  MONTHLY
 }

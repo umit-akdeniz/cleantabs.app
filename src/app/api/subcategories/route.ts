@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateId } from '@/lib/utils';
-import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
+import { getAuthUser } from '@/lib/simple-auth';
+import { CreateSubcategorySchema } from '@/schemas/subcategory';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    const user = await getAuthUser(request);
     
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
 
     const subcategories = await prisma.subcategory.findMany({
@@ -35,25 +38,37 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    const user = await getAuthUser(request);
     
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
 
-    const { name, categoryId, icon = 'Folder' } = await request.json();
-    
-    if (!name || !categoryId) {
-      return NextResponse.json(
-        { error: 'Name and category ID are required' },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const { name, categoryId, icon } = CreateSubcategorySchema.parse(body);
+
+    // Verify category ownership
+    const category = await prisma.category.findFirst({
+      where: { 
+        id: categoryId,
+        userId: user.userId 
+      }
+    });
+
+    if (!category) {
+      return NextResponse.json({
+        success: false,
+        error: 'Category not found or unauthorized'
+      }, { status: 404 });
     }
 
     const subcategory = await prisma.subcategory.create({
       data: {
         name,
-        icon,
+        icon: icon || 'Folder',
         categoryId
       }
     });
@@ -70,10 +85,13 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    const user = await getAuthUser(request);
     
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

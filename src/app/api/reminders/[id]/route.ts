@@ -1,59 +1,128 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
+import { getAuthUser } from '@/lib/simple-auth';
+
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    const user = getAuthUser(request);
+    
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
+    }
+
+    const { id } = await context.params;
+
+    // Get reminder - ONLY if it belongs to the user
+    const reminder = await prisma.reminder.findFirst({
+      where: {
+        id,
+        userId: (await user)?.userId
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+            url: true
+          }
+        }
+      }
+    });
+
+    if (!reminder) {
+      return NextResponse.json({
+        success: false,
+        error: 'Reminder not found'
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      reminder
+    });
+
+  } catch (error) {
+    console.error('Get reminder error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
+  }
+}
 
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    const user = getAuthUser(request);
+    
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
 
     const body = await request.json();
     const { title, description, reminderDate, reminderType, isCompleted } = body;
     const { id } = await context.params;
 
-    const reminder = await prisma.reminder.update({
-      where: { id },
+    // Update reminder - ONLY if it belongs to the user
+    const reminder = await prisma.reminder.updateMany({
+      where: {
+        id,
+        userId: (await user)?.userId
+      },
       data: {
-        title,
-        description,
-        reminderDate: reminderDate ? new Date(reminderDate) : undefined,
-        reminderType,
-        completed: isCompleted,
+        ...(title && { title }),
+        ...(description !== undefined && { description }),
+        ...(reminderDate && { reminderDate: new Date(reminderDate) }),
+        ...(reminderType && { reminderType }),
+        ...(isCompleted !== undefined && { completed: isCompleted }),
+        updatedAt: new Date()
+      }
+    });
+
+    if (reminder.count === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Reminder not found or access denied'
+      }, { status: 404 });
+    }
+
+    // Fetch updated reminder
+    const updatedReminder = await prisma.reminder.findFirst({
+      where: {
+        id,
+        userId: (await user)?.userId
       },
       include: {
         site: {
           select: {
-            name: true
+            id: true,
+            name: true,
+            url: true
           }
         }
       }
     });
 
-    // Transform response to match frontend interface
-    const reminderResponse = {
-      id: reminder.id,
-      title: reminder.title,
-      description: reminder.description,
-      reminderDate: reminder.reminderDate.toISOString(),
-      reminderType: reminder.reminderType,
-      siteId: reminder.siteId,
-      siteName: reminder.site.name,
-      isCompleted: reminder.completed,
-      createdAt: reminder.createdAt.toISOString(),
-    };
+    return NextResponse.json({
+      success: true,
+      reminder: updatedReminder,
+      message: 'Reminder updated successfully'
+    });
 
-    return NextResponse.json(reminderResponse);
   } catch (error) {
-    console.error('Error updating reminder:', error);
-    return NextResponse.json(
-      { error: 'Failed to update reminder' },
-      { status: 500 }
-    );
+    console.error('Update reminder error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }
 
@@ -62,23 +131,42 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    const user = getAuthUser(request);
+    
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
 
     const { id } = await context.params;
 
-    await prisma.reminder.delete({
-      where: { id }
+    // Delete reminder - ONLY if it belongs to the user
+    const deletedReminder = await prisma.reminder.deleteMany({
+      where: {
+        id,
+        userId: (await user)?.userId
+      }
     });
 
-    return NextResponse.json({ success: true });
+    if (deletedReminder.count === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Reminder not found or access denied'
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Reminder deleted successfully'
+    });
+
   } catch (error) {
-    console.error('Error deleting reminder:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete reminder' },
-      { status: 500 }
-    );
+    console.error('Delete reminder error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
   }
 }

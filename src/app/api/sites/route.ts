@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateId } from '@/lib/utils';
-import { MiddlewareUtils } from '@/lib/auth/middleware-utils';
+import { getAuthUser } from '@/lib/simple-auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
+    const user = getAuthUser(request);
     
     if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
     }
 
     const sites = await prisma.site.findMany({
@@ -29,111 +31,102 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: {
-        createdAt: 'asc'
+        createdAt: 'desc'
       }
     });
 
-    // Transform data to match the expected format
-    const transformedSites = Array.isArray(sites) ? sites.map(site => ({
+    // Transform data to match expected format
+    const transformedSites = sites.map(site => ({
       id: site.id,
-      name: site.name,
-      url: site.url,
+      name: site.name || 'Unnamed Site',
+      url: site.url || '',
       description: site.description,
       color: site.color,
       favicon: site.favicon,
       personalNotes: site.personalNotes,
       customInitials: site.customInitials,
-      lastChecked: site.lastChecked?.toISOString(),
-      tags: Array.isArray(site.tags) ? site.tags.map(tag => tag.name) : [],
       reminderEnabled: site.reminderEnabled,
-      categoryId: site.subcategory.category.id,
-      subcategoryId: site.subcategoryId,
-      subLinks: Array.isArray(site.subLinks) ? site.subLinks.map(link => ({
-        name: link.name,
-        url: link.url
-      })) : []
-    })) : [];
-
-    return NextResponse.json(transformedSites);
-  } catch (error) {
-    console.error('Error fetching sites:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sites' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const user = await MiddlewareUtils.getAuthenticatedUser(request);
-    
-    if (!user) {
-      return MiddlewareUtils.unauthorizedResponse();
-    }
-
-    const body = await request.json();
-    const { name, url, description, color, favicon, personalNotes, customInitials, tags, reminderEnabled, subcategoryId, subLinks } = body;
-
-    const site = await prisma.site.create({
-      data: {
-        name,
-        url,
-        description,
-        color,
-        favicon,
-        personalNotes,
-        customInitials,
-        reminderEnabled,
-        subcategoryId,
-        tags: {
-          create: tags?.map((tag: string) => ({ name: tag })) || []
-        },
-        subLinks: {
-          create: subLinks?.map((link: { name: string; url: string }) => ({
-            name: link.name,
-            url: link.url
-          })) || []
-        }
-      },
-      include: {
-        tags: true,
-        subLinks: true,
-        subcategory: {
-          include: {
-            category: true
-          }
-        }
-      }
-    });
-
-    // Transform response
-    const transformedSite = {
-      id: site.id,
-      name: site.name,
-      url: site.url,
-      description: site.description,
-      color: site.color,
-      favicon: site.favicon,
-      personalNotes: site.personalNotes,
-      customInitials: site.customInitials,
-      lastChecked: site.lastChecked?.toISOString(),
       tags: site.tags.map(tag => tag.name),
-      reminderEnabled: site.reminderEnabled,
       categoryId: site.subcategory.category.id,
       subcategoryId: site.subcategoryId,
       subLinks: site.subLinks.map(link => ({
         name: link.name,
         url: link.url
       }))
-    };
+    }));
 
-    return NextResponse.json(transformedSite);
+    return NextResponse.json(transformedSites);
+    
   } catch (error) {
-    console.error('Error creating site:', error);
-    return NextResponse.json(
-      { error: 'Failed to create site' },
-      { status: 500 }
-    );
+    console.error('Sites GET error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Server error'
+    }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = getAuthUser(request);
+    
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized'
+      }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { name, url, description, color, subcategoryId, tags = [], subLinks = [] } = body;
+
+    // Verify subcategory ownership
+    const subcategory = await prisma.subcategory.findFirst({
+      where: {
+        id: subcategoryId,
+        category: {
+          userId: user.userId
+        }
+      }
+    });
+
+    if (!subcategory) {
+      return NextResponse.json({
+        success: false,
+        error: 'Subcategory not found'
+      }, { status: 404 });
+    }
+
+    const site = await prisma.site.create({
+      data: {
+        name: name || 'Unnamed Site',
+        url: url || '',
+        description,
+        color,
+        subcategoryId,
+        tags: {
+          create: tags.map((tag: string) => ({ name: tag }))
+        },
+        subLinks: {
+          create: subLinks.map((link: any) => ({
+            name: link.name,
+            url: link.url
+          }))
+        }
+      },
+      include: {
+        tags: true,
+        subLinks: true
+      }
+    });
+
+    return NextResponse.json(site, { status: 201 });
+    
+  } catch (error) {
+    console.error('Sites POST error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Server error'
+    }, { status: 500 });
   }
 }

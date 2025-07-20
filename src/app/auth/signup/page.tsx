@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import Logo from '@/components/Logo';
-import { useAuth } from '@/lib/auth/context';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -16,8 +16,6 @@ export default function SignUp() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
-
-  const { register, isLoading: authLoading, error: authError } = useAuth();
 
   // Clear error when component loads
   useEffect(() => {
@@ -54,19 +52,33 @@ export default function SignUp() {
       return;
     }
 
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
-      setLoading(false);
-      return;
-    }
-
     try {
-      await register(name.trim(), email.trim().toLowerCase(), password);
-      setSuccess('Account created successfully! Redirecting to dashboard...');
+      // Register the user with email verification
+      const response = await fetch('/api/auth/simple-register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      setSuccess(data.message || 'Hesabın başarıyla oluşturuldu! Email adresine doğrulama kodu gönderildi.');
+
+      // Redirect to verification code page
       setTimeout(() => {
-        router.push('/dashboard');
-        router.refresh();
-      }, 1000);
+        router.push(`/auth/verify-code?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      }, 2000);
+      
     } catch (error: any) {
       setError(error.message || 'Something went wrong. Please try again.');
     } finally {
@@ -75,7 +87,13 @@ export default function SignUp() {
   };
 
   const handleOAuthSignUp = async (provider: string) => {
-    setError('OAuth sign-up is not currently available. Please use email registration.');
+    setLoading(true);
+    try {
+      await signIn(provider, { callbackUrl: '/dashboard' });
+    } catch (error) {
+      setError(`Failed to sign up with ${provider}. Please try again.`);
+      setLoading(false);
+    }
   };
 
   return (

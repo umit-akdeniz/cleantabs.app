@@ -1,0 +1,228 @@
+// Enhanced schema with RBAC and security features
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  GUEST
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum ReminderType {
+  NOTIFICATION
+  EMAIL
+  BOTH
+}
+
+enum AuthEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGE
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  TWO_FA_ENABLED
+  TWO_FA_DISABLED
+  TWO_FA_SUCCESS
+  TWO_FA_FAILED
+}
+
+model User {
+  id                      String     @id @default(cuid())
+  name                    String?
+  email                   String     @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?
+  role                    Role       @default(USER)
+  plan                    Plan       @default(FREE)
+  
+  // Security fields
+  isLocked                Boolean    @default(false)
+  lockoutEnd              DateTime?
+  failedLoginAttempts     Int        @default(0)
+  lastLoginAt             DateTime?
+  lastLoginIp             String?
+  
+  // 2FA fields
+  twoFactorEnabled        Boolean    @default(false)
+  twoFactorSecret         String?
+  twoFactorBackupCodes    String[]
+  
+  // Email verification
+  emailVerificationToken  String?    @unique
+  emailVerificationExpiry DateTime?
+  
+  // Password reset
+  passwordResetToken      String?    @unique
+  passwordResetExpiry     DateTime?
+  
+  // Magic link
+  magicLinkToken          String?    @unique
+  magicLinkExpiry         DateTime?
+  
+  // Stripe integration
+  stripeCustomerId        String?    @unique
+  stripeSubscriptionId    String?    @unique
+  
+  // Timestamps
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  
+  // Relations
+  accounts                Account[]
+  sessions                Session[]
+  categories              Category[]
+  authEvents              AuthEvent[]
+  refreshTokens           RefreshToken[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AuthEvent {
+  id        String        @id @default(cuid())
+  userId    String?
+  type      AuthEventType
+  success   Boolean
+  ipAddress String?
+  userAgent String?
+  details   Json?
+  createdAt DateTime      @default(now())
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Category {
+  id            String        @id @default(cuid())
+  name          String
+  icon          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  order         Int           @default(0)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategories Subcategory[]
+}
+
+model Subcategory {
+  id         String   @id @default(cuid())
+  name       String
+  icon       String?
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Int      @default(0)
+  sites      Site[]
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Site {
+  id              String      @id @default(cuid())
+  name            String
+  url             String
+  description     String?
+  color           String?
+  favicon         String?
+  personalNotes   String?
+  customInitials  String?
+  lastChecked     DateTime?
+  reminderEnabled Boolean     @default(false)
+  subcategoryId   String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  order           Int         @default(0)
+  reminders       Reminder[]
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  subLinks        SubLink[]
+  tags            Tag[]
+}
+
+model Tag {
+  id     String @id @default(cuid())
+  name   String
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}
+
+model SubLink {
+  id     String @id @default(cuid())
+  name   String
+  url    String
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  reminderDate DateTime
+  reminderType ReminderType @default(NOTIFICATION)
+  emailSent    Boolean      @default(false)
+  completed    Boolean      @default(false)
+  siteId       String
+  userId       String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  site         Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}

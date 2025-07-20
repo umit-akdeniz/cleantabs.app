@@ -51,18 +51,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const cachedUser = authClient.getUser()
         const tokens = authClient.getTokens()
         
+        console.log('🔍 Auth loading:', { cachedUser, hasTokens: !!tokens });
+        
         if (cachedUser && tokens && !authClient.isTokenExpired()) {
           // Set user immediately from cache
           setUser(cachedUser)
           setIsLoading(false)
+          console.log('✅ User loaded from cache:', cachedUser);
           
           // Then verify with server in background
           try {
             const serverUser = await authClient.getCurrentUser()
             if (serverUser) {
               setUser(serverUser)
+              console.log('✅ User verified from server:', serverUser);
             } else {
               // Server says no user, clear local data
+              console.log('❌ Server verification failed, clearing user');
               setUser(null)
             }
           } catch (error) {
@@ -71,6 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } else {
           // No cached user or expired token
+          console.log('❌ No cached user or expired token');
           setUser(null)
           setIsLoading(false)
         }
@@ -152,12 +158,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Don't render children until hydrated to prevent mismatch
   if (!isHydrated) {
     return (
-      <div className="h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-700 rounded-full animate-spin border-t-blue-500 mx-auto"></div>
-          <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Loading...</p>
-        </div>
-      </div>
+      <AuthContext.Provider value={{
+        user: null,
+        isAuthenticated: false,
+        isLoading: true,
+        error: null,
+        login,
+        register,
+        logout,
+        clearError,
+      }}>
+        {children}
+      </AuthContext.Provider>
     )
   }
 

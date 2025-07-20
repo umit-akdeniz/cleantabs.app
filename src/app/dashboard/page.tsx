@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth/context';
 import { Site } from '@/types';
 import { useDatabase } from '@/hooks/useDatabase';
+import { useAuth } from '@/lib/auth/context';
+import { authClient } from '@/lib/auth/client';
 // Dynamic imports to prevent hydration issues
 const ModernThreePanelSidebar = dynamic(() => import('@/components/ModernThreePanelSidebar'), {
   ssr: false,
@@ -46,7 +47,7 @@ import CookieConsent from '@/components/CookieConsent';
 import { useHydration } from '@/hooks/useHydration';
 
 export default function Home() {
-  const { user, logout, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const router = useRouter();
   const { categories, sites: dbSites, loading, error, refreshData, refreshCategories } = useDatabase();
 
@@ -59,6 +60,20 @@ export default function Home() {
       return;
     }
   }, [isAuthenticated, authLoading, router]);
+
+  // Debug: log auth state
+  useEffect(() => {
+    console.log('🔍 Auth State:', {
+      user,
+      isAuthenticated,
+      authLoading,
+      hasCategories: categories.length,
+      hasSites: dbSites.length,
+      error
+    });
+    
+    // Toast system works - test removed
+  }, [user, isAuthenticated, authLoading, categories, dbSites, error]);
   const [sites, setSites] = useState<Site[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
@@ -153,9 +168,15 @@ export default function Home() {
     try {
       if (editingSite) {
         // Update existing site
+        console.log('🔍 Updating site:', site.id);
         const response = await fetch(`/api/sites/${site.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+            'x-user-email': user.email,
+            'x-user-plan': user.plan || 'FREE'
+          },
           body: JSON.stringify(site)
         });
         
@@ -173,9 +194,15 @@ export default function Home() {
         }
       } else {
         // Create new site
+        console.log('🔍 Creating site:', site.name);
         const response = await fetch('/api/sites', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+            'x-user-email': user.email,
+            'x-user-plan': user.plan || 'FREE'
+          },
           body: JSON.stringify(site)
         });
         
@@ -221,27 +248,44 @@ export default function Home() {
     }
 
     try {
+      const tokens = authClient.getTokens();
+      if (!tokens) {
+        showToast({
+          type: 'error',
+          title: 'Authentication Error',
+          message: 'Please log in again to continue'
+        });
+        return;
+      }
+
+      console.log('🔍 Creating category:', { name, userId: user.id });
       const response = await fetch('/api/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.accessToken}`
+        },
         body: JSON.stringify({ name })
       });
 
+      console.log('🔍 Category API response status:', response.status);
+
       if (response.ok) {
-        const newCategory = await response.json();
+        const data = await response.json();
+        console.log('✅ Category created successfully:', data);
         showToast({
           type: 'success',
           title: 'Category Added',
           message: `Category "${name}" has been created successfully`
         });
-        // Refresh only categories data without affecting sites
         await refreshCategories();
       } else {
-        console.error('Failed to add category');
+        const errorData = await response.text();
+        console.error('❌ Category creation failed:', errorData);
         showToast({
           type: 'error',
           title: 'Error',
-          message: 'Failed to add category. Please try again.'
+          message: `Failed to add category: ${response.status} ${errorData}`
         });
       }
     } catch (error) {
@@ -255,6 +299,7 @@ export default function Home() {
   };
 
   const handleAddSubcategory = async (categoryId: string, name: string) => {
+    console.log('🔧 handleAddSubcategory called:', { categoryId, name });
     // Check plan limits for free users
     if (user?.plan === 'FREE') {
       const category = categories.find(c => c.id === categoryId);
@@ -271,11 +316,27 @@ export default function Home() {
     }
 
     try {
+      const tokens = authClient.getTokens();
+      if (!tokens) {
+        showToast({
+          type: 'error',
+          title: 'Authentication Error',
+          message: 'Please log in again to continue'
+        });
+        return;
+      }
+
+      console.log('🔍 Creating subcategory:', { name, categoryId, userId: user.id });
       const response = await fetch('/api/subcategories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.accessToken}`
+        },
         body: JSON.stringify({ name, categoryId })
       });
+
+      console.log('🔍 Subcategory API response status:', response.status);
 
       if (response.ok) {
         const category = categories.find(c => c.id === categoryId);
@@ -284,10 +345,8 @@ export default function Home() {
           title: 'Subcategory Added',
           message: `Subcategory "${name}" has been added to "${category?.name}"`
         });
-        // Refresh only categories data without affecting sites
         await refreshCategories();
       } else {
-        console.error('Failed to add subcategory');
         showToast({
           type: 'error',
           title: 'Error',
@@ -305,13 +364,23 @@ export default function Home() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category and all its subcategories and sites?')) {
-      return;
-    }
-
     try {
+      const tokens = authClient.getTokens();
+      if (!tokens) {
+        showToast({
+          type: 'error',
+          title: 'Authentication Error',
+          message: 'Please log in again to continue'
+        });
+        return;
+      }
+
       const response = await fetch(`/api/categories?id=${categoryId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${tokens.accessToken}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
@@ -321,7 +390,6 @@ export default function Home() {
           setSelectedSubcategory(null);
           setSelectedSite(null);
         }
-        // Refresh categories data
         await refreshData();
         showToast({
           type: 'success',
@@ -329,7 +397,6 @@ export default function Home() {
           message: 'Category and all its content have been deleted successfully'
         });
       } else {
-        console.error('Failed to delete category');
         showToast({
           type: 'error',
           title: 'Error',
@@ -358,12 +425,10 @@ export default function Home() {
         showToast({
           type: 'success',
           title: 'Category Updated',
-          message: `Category has been updated successfully`
+          message: 'Category has been updated successfully'
         });
-        // Refresh only categories data without affecting sites
         await refreshCategories();
       } else {
-        console.error('Failed to update category');
         showToast({
           type: 'error',
           title: 'Error',
@@ -392,12 +457,10 @@ export default function Home() {
         showToast({
           type: 'success',
           title: 'Subcategory Updated',
-          message: `Subcategory has been updated successfully`
+          message: 'Subcategory has been updated successfully'
         });
-        // Refresh only categories data without affecting sites
         await refreshCategories();
       } else {
-        console.error('Failed to update subcategory');
         showToast({
           type: 'error',
           title: 'Error',
@@ -430,7 +493,6 @@ export default function Home() {
           setSelectedSubcategory(null);
           setSelectedSite(null);
         }
-        // Refresh categories data
         await refreshData();
         showToast({
           type: 'success',
@@ -438,7 +500,6 @@ export default function Home() {
           message: 'Subcategory and all its sites have been deleted successfully'
         });
       } else {
-        console.error('Failed to delete subcategory');
         showToast({
           type: 'error',
           title: 'Error',
@@ -573,10 +634,9 @@ export default function Home() {
     setSelectedSite(site);
   }, []);
 
-  // Handle moving subcategory to different category
   const handleMoveSubcategory = async (subcategoryId: string, targetCategoryId: string) => {
     try {
-      const response = await fetch(`/api/subcategories/move`, {
+      const response = await fetch('/api/subcategories/move', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subcategoryId, targetCategoryId })
@@ -588,7 +648,6 @@ export default function Home() {
           title: 'Subcategory Moved',
           message: 'Subcategory has been moved successfully'
         });
-        // Refresh only categories data without affecting current selections
         await refreshCategories();
       } else {
         throw new Error('Failed to move subcategory');
@@ -604,11 +663,9 @@ export default function Home() {
   };
 
 
-  // Handle moving site to different subcategory
   const handleMoveSite = useCallback(async (siteId: string, targetSubcategoryId: string) => {
-    console.log('handleMoveSite called:', { siteId, targetSubcategoryId });
     try {
-      const response = await fetch(`/api/sites/move`, {
+      const response = await fetch('/api/sites/move', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ siteId, targetSubcategoryId })
@@ -616,7 +673,6 @@ export default function Home() {
 
       if (response.ok) {
         const updatedSite = await response.json();
-        console.log('Site moved successfully:', updatedSite);
         setSites(prevSites => prevSites.map(s => s.id === siteId ? updatedSite : s));
         if (selectedSite?.id === siteId) {
           setSelectedSite(updatedSite);
@@ -627,18 +683,10 @@ export default function Home() {
           message: 'Site has been moved successfully'
         });
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.log('Move site failed:', response.status, errorData);
         throw new Error(`Failed to move site: ${response.status}`);
       }
     } catch (error) {
-      console.log('Error moving site:', error);
-      console.log('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace',
-        siteId,
-        targetSubcategoryId
-      });
+      console.error('Error moving site:', error);
       showToast({
         type: 'error',
         title: 'Error',
@@ -946,6 +994,8 @@ export default function Home() {
             onTagFilter={handleTagFilter}
             availableTags={availableTags}
             selectedTags={selectedTags}
+            onAddCategory={handleAddCategory}
+            onAddSubcategory={handleAddSubcategory}
             onOpenCategoryModal={() => setShowCategoryModal(true)}
             onOpenImportModal={() => setShowImportModal(true)}
             onEditSite={handleEditSite}

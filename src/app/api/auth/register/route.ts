@@ -33,6 +33,16 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     plan: plan || 'FREE'
   })
 
+  // Create sample data for new user
+  try {
+    const { createSampleDataForUser } = require('../../../../../create-sample-data.js')
+    await createSampleDataForUser(user.id)
+    console.log(`✅ Sample data created for new user: ${user.email}`)
+  } catch (error) {
+    console.error('⚠️ Error creating sample data for new user:', error)
+    // Don't fail registration if sample data creation fails
+  }
+
   // Generate JWT tokens
   const tokens = JWTManager.generateTokens({
     id: user.id,
@@ -48,6 +58,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     resetPasswordExpiry: user.resetPasswordExpiry || null,
     verificationToken: user.verificationToken,
     verificationTokenExpiry: user.verificationTokenExpiry || null,
+    verificationCode: user.verificationCode,
+    verificationCodeExpiry: user.verificationCodeExpiry || null,
     stripeCustomerId: user.stripeCustomerId,
     stripeSubscriptionId: user.stripeSubscriptionId
   })

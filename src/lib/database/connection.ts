@@ -29,25 +29,15 @@ export class DatabaseConnection {
 
   private static createInstance(): PrismaClient {
     console.log('🔌 Creating new Prisma client instance')
-    
-    // In production, add pgbouncer compatible settings to prevent prepared statement conflicts
-    const databaseUrl = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL 
-      ? `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes('?') ? '&' : '?'}pgbouncer=true&connection_limit=1&pool_timeout=0`
-      : process.env.DATABASE_URL
 
     const client = new PrismaClient({
-      datasources: {
-        db: {
-          url: databaseUrl
-        }
-      },
       log: process.env.NODE_ENV === 'development' 
         ? ['error', 'warn'] 
         : ['error'],
       errorFormat: 'minimal',
       transactionOptions: {
-        timeout: 10000, // 10 seconds
-        maxWait: 5000,  // 5 seconds
+        timeout: 15000, // 15 seconds
+        maxWait: 8000,  // 8 seconds
       },
     })
 
