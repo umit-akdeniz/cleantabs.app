@@ -35,7 +35,7 @@ async function sendVerificationEmail(email: string, token: string, code: string,
   const mailOptions = {
     from: '"CleanTabs" <cleantabsapp@gmail.com>',
     to: email,
-    subject: '✅ CleanTabs - Email Doğrulama Kodu',
+    subject: '✅ CleanTabs - Email Verification Code',
     html: `
       <!DOCTYPE html>
       <html>
@@ -51,12 +51,12 @@ async function sendVerificationEmail(email: string, token: string, code: string,
               ✅
             </div>
             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">CleanTabs</h1>
-            <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 16px;">Email Doğrulama</p>
+            <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 16px;">Email Verification</p>
           </div>
           
           <div style="padding: 40px 30px;">
-            <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Merhaba ${name}! 👋</h2>
-            <p style="color: #64748b; margin: 0 0 24px 0; font-size: 16px;">CleanTabs'a hoş geldin! Hesabını aktifleştirmek için aşağıdaki yöntemlerden birini kullanabilirsin:</p>
+            <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Hello ${name}! 👋</h2>
+            <p style="color: #64748b; margin: 0 0 24px 0; font-size: 16px;">Welcome to CleanTabs! To activate your account, you can use one of the following methods:</p>
             
             <!-- Verification Code -->
             <div style="background: #f1f5f9; padding: 24px; border-radius: 12px; margin: 24px 0; text-align: center; border: 2px solid #3b82f6;">
@@ -87,7 +87,7 @@ async function sendVerificationEmail(email: string, token: string, code: string,
             
             <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #f59e0b;">
               <p style="color: #92400e; margin: 0; font-size: 14px;">
-                <strong>⚠️ Önemli:</strong> Bu doğrulama bağlantıları 24 saat sonra geçerliliğini yitirecek. Doğrulama kodu ise 15 dakika içinde kullanılmalı.
+                <strong>⚠️ Important:</strong> These verification links will expire after 24 hours. The verification code must be used within 15 minutes.
               </p>
             </div>
             
@@ -100,8 +100,8 @@ async function sendVerificationEmail(email: string, token: string, code: string,
         </div>
         
         <div style="text-align: center; margin-top: 24px; color: #94a3b8; font-size: 12px;">
-          <p>© 2024 CleanTabs. Bu email doğrulama için gönderildi.</p>
-          <p>Eğer bu hesabı sen oluşturmadıysan, bu emaili görmezden gelebilirsin.</p>
+          <p>© 2024 CleanTabs. This email was sent for verification.</p>
+          <p>If you did not create this account, you can ignore this email.</p>
         </div>
       </body>
       </html>
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     console.log('Returning success response')
     return NextResponse.json({
       success: true,
-      message: 'Hesabın başarıyla oluşturuldu! Email adresine gönderilen doğrulama linkine tıklayarak hesabını aktifleştir.',
+      message: 'Account created successfully! Click the verification link sent to your email to activate your account.',
       data: {
         user: {
           id: user.id,
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: false,
-      error: 'Hesap oluşturulurken bir hata oluştu'
+      error: 'An error occurred while creating account'
     }, { status: 500 })
   }
 }

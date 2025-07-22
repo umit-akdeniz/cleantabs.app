@@ -27,7 +27,7 @@ async function sendNewVerificationEmail(email: string, token: string, code: stri
   const mailOptions = {
     from: '"CleanTabs" <cleantabsapp@gmail.com>',
     to: email,
-    subject: '🔄 CleanTabs - Yeni Doğrulama Kodu',
+    subject: '🔄 CleanTabs - New Verification Code',
     html: `
       <!DOCTYPE html>
       <html>
@@ -43,12 +43,12 @@ async function sendNewVerificationEmail(email: string, token: string, code: stri
               🔄
             </div>
             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">CleanTabs</h1>
-            <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 16px;">Yeni Doğrulama Kodu</p>
+            <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 16px;">New Verification Code</p>
           </div>
           
           <div style="padding: 40px 30px;">
-            <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Merhaba ${name}! 👋</h2>
-            <p style="color: #64748b; margin: 0 0 24px 0; font-size: 16px;">Yeni doğrulama kodu talebinde bulundun. İşte yeni kodun:</p>
+            <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Hello ${name}! 👋</h2>
+            <p style="color: #64748b; margin: 0 0 24px 0; font-size: 16px;">You requested a new verification code. Here is your new code:</p>
             
             <!-- Verification Code -->
             <div style="background: #f1f5f9; padding: 24px; border-radius: 12px; margin: 24px 0; text-align: center; border: 2px solid #059669;">
@@ -92,8 +92,8 @@ async function sendNewVerificationEmail(email: string, token: string, code: stri
         </div>
         
         <div style="text-align: center; margin-top: 24px; color: #94a3b8; font-size: 12px;">
-          <p>© 2024 CleanTabs. Bu yeni doğrulama kodu için gönderildi.</p>
-          <p>Eğer bu talepte bulunmadıysan, bu emaili görmezden gelebilirsin.</p>
+          <p>© 2024 CleanTabs. This email was sent for your new verification code.</p>
+          <p>If you didn't request this, you can ignore this email.</p>
         </div>
       </body>
       </html>
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({
         success: false,
-        error: 'Bu email adresi ile kayıtlı kullanıcı bulunamadı'
+        error: 'No user found with this email address'
       }, { status: 404 });
     }
 
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Yeni doğrulama kodu email adresinize gönderildi'
+      message: 'New verification code sent to your email'
     });
 
   } catch (error) {

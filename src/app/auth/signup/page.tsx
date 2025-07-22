@@ -72,7 +72,7 @@ export default function SignUp() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setSuccess(data.message || 'Hesabın başarıyla oluşturuldu! Email adresine doğrulama kodu gönderildi.');
+      setSuccess(data.message || 'Account created successfully! Verification code sent to your email.');
 
       // Redirect to verification code page
       setTimeout(() => {

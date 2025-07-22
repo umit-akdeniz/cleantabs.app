@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!code || !email) {
       return NextResponse.json({
         success: false,
-        error: 'Kod ve email adresi gerekli'
+        error: 'Code and email address required'
       }, { status: 400 });
     }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({
         success: false,
-        error: 'Geçersiz veya süresi dolmuş doğrulama kodu'
+        error: 'Invalid or expired verification code'
       }, { status: 400 });
     }
 
@@ -46,14 +46,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Email adresin başarıyla doğrulandı!'
+      message: 'Your email has been successfully verified!'
     });
 
   } catch (error) {
     console.error('Code verification error:', error);
     return NextResponse.json({
       success: false,
-      error: 'Sunucu hatası'
+      error: 'Server error'
     }, { status: 500 });
   }
 }

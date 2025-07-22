@@ -69,10 +69,10 @@ export default function ForgotPassword() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-            Şifremi Unuttum
+            Forgot Password
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm">
-            Email adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
+            Enter your email address and we'll send you a password reset link.
           </p>
         </div>
 
@@ -88,14 +88,14 @@ export default function ForgotPassword() {
             {success && (
               <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-xl">
                 <p className="text-green-600 dark:text-green-400 text-sm font-medium">
-                  Şifre sıfırlama bağlantısı email adresinize gönderildi. Lütfen email kutunuzu kontrol edin.
+                  Password reset link has been sent to your email. Please check your inbox.
                 </p>
               </div>
             )}
 
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                Email Adresi
+                Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
@@ -105,7 +105,7 @@ export default function ForgotPassword() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-                  placeholder="ornek@email.com"
+                  placeholder="example@email.com"
                   autoComplete="email"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -124,12 +124,12 @@ export default function ForgotPassword() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Gönderiliyor...
+                  Sending...
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  Şifre Sıfırlama Bağlantısı Gönder
+                  Send Password Reset Link
                 </>
               )}
             </button>
@@ -138,12 +138,12 @@ export default function ForgotPassword() {
           {/* Sign up link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Hesabınız yok mu?{' '}
+              Don't have an account?{' '}
               <Link 
                 href="/auth/signup" 
                 className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
               >
-                Hesap oluşturun
+                Create account
               </Link>
             </p>
           </div>
