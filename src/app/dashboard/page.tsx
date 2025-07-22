@@ -38,6 +38,10 @@ const AIPromptsModal = dynamic(() => import('@/components/AIPromptsModal'), {
   ssr: false,
   loading: () => null
 });
+const PushNotificationSetup = dynamic(() => import('@/components/PushNotificationSetup'), { 
+  ssr: false,
+  loading: () => null
+});
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import { checkPlanLimits } from '@/lib/planLimits';
@@ -173,9 +177,9 @@ export default function Home() {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
-            'x-user-email': user.email,
-            'x-user-plan': user.plan || 'FREE'
+            'x-user-id': user?.id || '',
+            'x-user-email': user?.email || '',
+            'x-user-plan': user?.plan || 'FREE'
           },
           body: JSON.stringify(site)
         });
@@ -199,9 +203,9 @@ export default function Home() {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
-            'x-user-email': user.email,
-            'x-user-plan': user.plan || 'FREE'
+            'x-user-id': user?.id || '',
+            'x-user-email': user?.email || '',
+            'x-user-plan': user?.plan || 'FREE'
           },
           body: JSON.stringify(site)
         });
@@ -258,7 +262,7 @@ export default function Home() {
         return;
       }
 
-      console.log('🔍 Creating category:', { name, userId: user.id });
+      console.log('🔍 Creating category:', { name, userId: user?.id });
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 
@@ -326,7 +330,7 @@ export default function Home() {
         return;
       }
 
-      console.log('🔍 Creating subcategory:', { name, categoryId, userId: user.id });
+      console.log('🔍 Creating subcategory:', { name, categoryId, userId: user?.id });
       const response = await fetch('/api/subcategories', {
         method: 'POST',
         headers: { 

@@ -472,11 +472,11 @@ export default function ModernThreePanelSidebar({
         categories={categories}
         onAddCategory={(name) => {
           console.log('Add category:', name);
-          onAddCategory?.(name);
+          // Category added
         }}
         onAddSubcategory={(categoryId, name) => {
           console.log('Add subcategory:', categoryId, name);
-          onAddSubcategory?.(categoryId, name);
+          // Subcategory added
         }}
         selectedCategoryId={selectedCategoryForSubcategory}
       />

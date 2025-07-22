@@ -6,6 +6,7 @@ import { Site } from '@/types';
 import ReminderModal from './ReminderModal';
 import CreativeIcon from './CreativeIcon';
 import ClientOnly from './ClientOnly';
+import PushNotificationSetup from './PushNotificationSetup';
 import { ExternalLink, Edit, Trash2, Calendar, Clock, Bell, BellOff, Tag, X, Palette, FileText, Save, ArrowLeft } from 'lucide-react';
 
 interface SiteDetailPanelProps {
@@ -132,6 +133,11 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
               Organize your favorite websites with our clean, minimal interface. Create categories, 
               manage subcategories, and keep all your important links in one place.
             </p>
+            
+            {/* Push Notifications Setup */}
+            <div className="mb-6">
+              <PushNotificationSetup />
+            </div>
             
             {/* Quick Guide */}
             <div className="space-y-3 text-left bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
@@ -316,9 +322,17 @@ export default function SiteDetailPanel({ site, onEdit, onUpdate, onDelete, onCl
     try {
       console.log('Creating reminder with data:', reminderData, 'siteId:', site?.id);
       
+      // Get auth token for API request
+      const accessToken = localStorage.getItem('accessToken');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch('/api/reminders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           ...reminderData,
           siteId: site?.id,

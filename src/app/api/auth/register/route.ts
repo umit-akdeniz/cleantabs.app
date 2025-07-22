@@ -33,14 +33,16 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     plan: plan || 'FREE'
   })
 
-  // Create sample data for new user
+  // Sample data creation removed for production
+
+  // Send welcome email
   try {
-    const { createSampleDataForUser } = require('../../../../../create-sample-data.js')
-    await createSampleDataForUser(user.id)
-    console.log(`✅ Sample data created for new user: ${user.email}`)
+    const { sendWelcomeEmail } = require('@/lib/email')
+    await sendWelcomeEmail(user.email, user.name)
+    console.log(`✅ Welcome email sent to: ${user.email}`)
   } catch (error) {
-    console.error('⚠️ Error creating sample data for new user:', error)
-    // Don't fail registration if sample data creation fails
+    console.error('⚠️ Error sending welcome email:', error)
+    // Don't fail registration if email sending fails
   }
 
   // Generate JWT tokens
@@ -52,6 +54,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     emailVerified: user.emailVerified,
     image: user.image,
     password: user.password,
+    fcmToken: user.fcmToken,
+    fcmTokenUpdated: user.fcmTokenUpdated,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     resetPasswordToken: user.resetPasswordToken,

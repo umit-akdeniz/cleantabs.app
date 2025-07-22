@@ -24,7 +24,26 @@ export class DatabaseConnection {
     
     const client = DatabaseConnection.createInstance()
     global.__prisma = client
+    
+    // Warm up the connection in serverless
+    DatabaseConnection.warmConnection()
+    
     return client
+  }
+
+  static warmConnection(): void {
+    if (process.env.NODE_ENV === 'production') {
+      // Non-blocking connection warmup
+      setImmediate(async () => {
+        try {
+          const client = global.__prisma || DatabaseConnection.getInstance()
+          await client.$queryRaw`SELECT 1`
+          console.log('🔥 Connection warmed up')
+        } catch (error) {
+          console.warn('⚠️ Connection warmup failed:', error)
+        }
+      })
+    }
   }
 
   private static createInstance(): PrismaClient {
@@ -35,9 +54,14 @@ export class DatabaseConnection {
         ? ['error', 'warn'] 
         : ['error'],
       errorFormat: 'minimal',
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      },
       transactionOptions: {
-        timeout: 15000, // 15 seconds
-        maxWait: 8000,  // 8 seconds
+        timeout: 30000, // 30 seconds
+        maxWait: 15000,  // 15 seconds
       },
     })
 
@@ -72,15 +96,24 @@ export class DatabaseConnection {
   }
 
   static async testConnection(): Promise<boolean> {
-    try {
-      const client = DatabaseConnection.getInstance()
-      await client.$queryRaw`SELECT 1`
-      console.log('✅ Database connection successful')
-      return true
-    } catch (error) {
-      console.error('❌ Database connection failed:', error)
-      return false
+    let retries = 3
+    while (retries > 0) {
+      try {
+        const client = DatabaseConnection.getInstance()
+        await client.$queryRaw`SELECT 1`
+        console.log('✅ Database connection successful')
+        return true
+      } catch (error) {
+        retries--
+        console.error(`❌ Database connection failed (${3-retries}/3):`, error)
+        
+        if (retries > 0) {
+          console.log('🔄 Retrying in 2 seconds...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+      }
     }
+    return false
   }
 
   static async healthCheck(): Promise<{

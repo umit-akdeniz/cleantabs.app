@@ -3,6 +3,7 @@ export interface PlanLimits {
   maxSubcategoriesPerCategory: number;
   maxSitesPerSubcategory: number;
   maxTotalSites: number;
+  maxReminders: number;
 }
 
 export const PLAN_LIMITS: Record<'FREE' | 'PREMIUM', PlanLimits> = {
@@ -11,23 +12,26 @@ export const PLAN_LIMITS: Record<'FREE' | 'PREMIUM', PlanLimits> = {
     maxSubcategoriesPerCategory: 5,
     maxSitesPerSubcategory: 10,
     maxTotalSites: 150, // 3 * 5 * 10
+    maxReminders: 20,
   },
   PREMIUM: {
     maxCategories: Infinity,
     maxSubcategoriesPerCategory: Infinity,
     maxSitesPerSubcategory: Infinity,
     maxTotalSites: Infinity,
+    maxReminders: 200,
   },
 };
 
 export function checkPlanLimits(
   plan: 'FREE' | 'PREMIUM',
-  type: 'category' | 'subcategory' | 'site',
+  type: 'category' | 'subcategory' | 'site' | 'reminder',
   currentCounts: {
     totalCategories?: number;
     totalSubcategoriesInCategory?: number;
     totalSitesInSubcategory?: number;
     totalSites?: number;
+    totalReminders?: number;
   }
 ): { allowed: boolean; reason?: string; upgradeRequired?: boolean } {
   const limits = PLAN_LIMITS[plan];
@@ -66,6 +70,18 @@ export function checkPlanLimits(
           allowed: false,
           reason: `Free plan allows maximum ${limits.maxTotalSites} total sites. Upgrade to Premium for unlimited sites.`,
           upgradeRequired: true,
+        };
+      }
+      break;
+
+    case 'reminder':
+      if ((currentCounts.totalReminders || 0) >= limits.maxReminders) {
+        return {
+          allowed: false,
+          reason: plan === 'FREE' 
+            ? `Free plan allows maximum ${limits.maxReminders} reminders. Upgrade to Premium for up to ${PLAN_LIMITS.PREMIUM.maxReminders} reminders.`
+            : `Premium plan allows maximum ${limits.maxReminders} reminders.`,
+          upgradeRequired: plan === 'FREE',
         };
       }
       break;

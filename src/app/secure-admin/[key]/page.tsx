@@ -34,7 +34,7 @@ export default function SecureAdminPanel() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [userModalLoading, setUserModalLoading] = useState(false);
   
-  // Yeni kullanıcı formu state'leri
+  // New user form states
   const [newUser, setNewUser] = useState({
     email: '',
     name: '',
@@ -43,25 +43,25 @@ export default function SecureAdminPanel() {
     emailVerified: false
   });
 
-  // Admin email kontrolü
+  // Admin email check
   const isAdminEmail = user?.email === 'umitakdenizjob@gmail.com';
   
   useEffect(() => {
     if (isLoading) return;
     
-    // Session kontrolü
+    // Session check
     if (!isAuthenticated || !isAdminEmail) {
       router.push('/');
       return;
     }
     
-    // Key doğrulama
+    // Key validation
     if (!validateAdminKey(key)) {
       router.push('/');
       return;
     }
     
-    // Kullanıcıları yükle
+    // Load users
     loadUsers();
   }, [isAuthenticated, isLoading, isAdminEmail, key, router]);
 
@@ -108,7 +108,7 @@ export default function SecureAdminPanel() {
       
       if (!response.ok) throw new Error('Failed to update user plan');
       
-      // Kullanıcı listesini güncelle
+      // Update user list
       setUsers(users.map(user => 
         user.id === userId ? { ...user, plan: newPlan } : user
       ));
@@ -131,7 +131,7 @@ export default function SecureAdminPanel() {
       
       if (!response.ok) throw new Error('Failed to verify user email');
       
-      // Kullanıcı listesini güncelle
+      // Update user list
       setUsers(users.map(user => 
         user.id === userId ? { ...user, emailVerified: new Date() } : user
       ));
@@ -154,7 +154,7 @@ export default function SecureAdminPanel() {
       
       if (!response.ok) throw new Error('Failed to delete user');
       
-      // Kullanıcıyı listeden kaldır
+      // Remove user from list
       setUsers(users.filter(user => user.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -202,10 +202,10 @@ export default function SecureAdminPanel() {
       
       const data = await response.json();
       
-      // Kullanıcı listesini yenile
+      // Refresh user list
       await loadUsers();
       
-      // Formu temizle ve modalı kapat
+      // Clear form and close modal
       setNewUser({
         email: '',
         name: '',
@@ -223,7 +223,7 @@ export default function SecureAdminPanel() {
     }
   };
 
-  // Loading durumu
+  // Loading state
   if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -320,12 +320,12 @@ export default function SecureAdminPanel() {
             <table className="w-full">
               <thead className="bg-white/5">
                 <tr>
-                  <th className="text-left p-4 text-white font-medium">Kullanıcı</th>
+                  <th className="text-left p-4 text-white font-medium">User</th>
                   <th className="text-left p-4 text-white font-medium">Plan</th>
-                  <th className="text-left p-4 text-white font-medium">Email Doğrulama</th>
-                  <th className="text-left p-4 text-white font-medium">İstatistikler</th>
-                  <th className="text-left p-4 text-white font-medium">Kayıt Tarihi</th>
-                  <th className="text-left p-4 text-white font-medium">İşlemler</th>
+                  <th className="text-left p-4 text-white font-medium">Email Verification</th>
+                  <th className="text-left p-4 text-white font-medium">Statistics</th>
+                  <th className="text-left p-4 text-white font-medium">Registration Date</th>
+                  <th className="text-left p-4 text-white font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -359,13 +359,13 @@ export default function SecureAdminPanel() {
                           <XCircle className="w-4 h-4 text-red-400" />
                         )}
                         <span className={user.emailVerified ? 'text-green-300' : 'text-red-300'}>
-                          {user.emailVerified ? 'Doğrulandı' : 'Doğrulanmadı'}
+                          {user.emailVerified ? 'Verified' : 'Not Verified'}
                         </span>
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="text-purple-200 text-sm">
-                        {user._count.categories} kategori, {user._count.sites} site
+                        {user._count.categories} categories, {user._count.sites} sites
                       </div>
                     </td>
                     <td className="p-4">
@@ -394,7 +394,7 @@ export default function SecureAdminPanel() {
                               : 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30'
                           }`}
                         >
-                          {user.plan === 'PREMIUM' ? 'FREE Yap' : 'PREMIUM Yap'}
+                          {user.plan === 'PREMIUM' ? 'Make FREE' : 'Make PREMIUM'}
                         </button>
                         
                         {/* Email doğrulama */}
@@ -404,7 +404,7 @@ export default function SecureAdminPanel() {
                             disabled={actionLoading === user.id}
                             className="px-3 py-1 rounded text-xs font-medium bg-green-500/20 text-green-300 hover:bg-green-500/30 transition-colors"
                           >
-                            Onayla
+                            Verify
                           </button>
                         )}
                         
@@ -414,7 +414,7 @@ export default function SecureAdminPanel() {
                           disabled={actionLoading === user.id}
                           className="px-3 py-1 rounded text-xs font-medium bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors"
                         >
-                          Sil
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -426,7 +426,7 @@ export default function SecureAdminPanel() {
           
           {users.length === 0 && !loading && (
             <div className="p-8 text-center text-purple-200">
-              Henüz kullanıcı bulunmuyor.
+              No users found yet.
             </div>
           )}
         </div>
@@ -436,7 +436,7 @@ export default function SecureAdminPanel() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-white/20 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white">Kullanıcı Detayları</h3>
+                <h3 className="text-xl font-bold text-white">User Details</h3>
                 <button
                   onClick={() => {
                     setShowUserModal(false);
@@ -450,18 +450,18 @@ export default function SecureAdminPanel() {
               
               {userModalLoading ? (
                 <div className="p-8 text-center text-white">
-                  Yükleniyor...
+                  Loading...
                 </div>
               ) : selectedUser ? (
                 <div className="p-6 space-y-6">
                   {/* User Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white/5 rounded-xl p-4">
-                      <h4 className="text-white font-medium mb-3">Kullanıcı Bilgileri</h4>
+                      <h4 className="text-white font-medium mb-3">User Information</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Ad:</span>
-                          <span className="text-white">{selectedUser.user.name || 'Belirtilmemiş'}</span>
+                          <span className="text-purple-200">Name:</span>
+                          <span className="text-white">{selectedUser.user.name || 'Not specified'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-200">Email:</span>
@@ -478,13 +478,13 @@ export default function SecureAdminPanel() {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Email Doğrulama:</span>
+                          <span className="text-purple-200">Email Verification:</span>
                           <span className={selectedUser.user.emailVerified ? 'text-green-300' : 'text-red-300'}>
-                            {selectedUser.user.emailVerified ? 'Doğrulandı' : 'Doğrulanmadı'}
+                            {selectedUser.user.emailVerified ? 'Verified' : 'Not Verified'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Kayıt Tarihi:</span>
+                          <span className="text-purple-200">Registration Date:</span>
                           <span className="text-white">
                             {new Date(selectedUser.user.createdAt).toLocaleDateString('tr-TR')}
                           </span>
@@ -493,35 +493,35 @@ export default function SecureAdminPanel() {
                     </div>
                     
                     <div className="bg-white/5 rounded-xl p-4">
-                      <h4 className="text-white font-medium mb-3">İstatistikler</h4>
+                      <h4 className="text-white font-medium mb-3">Statistics</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Toplam Kategori:</span>
+                          <span className="text-purple-200">Total Categories:</span>
                           <span className="text-white">{selectedUser.stats.totalCategories}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Alt Kategori:</span>
+                          <span className="text-purple-200">Subcategories:</span>
                           <span className="text-white">{selectedUser.stats.totalSubcategories}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Toplam Site:</span>
+                          <span className="text-purple-200">Total Sites:</span>
                           <span className="text-white">{selectedUser.stats.totalSites}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Son Giriş:</span>
+                          <span className="text-purple-200">Last Login:</span>
                           <span className="text-white">
                             {selectedUser.stats.lastLogin 
                               ? new Date(selectedUser.stats.lastLogin).toLocaleDateString('tr-TR')
-                              : 'Hiç giriş yapmamış'
+                              : 'Never logged in'
                             }
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-purple-200">Bağlı Hesaplar:</span>
+                          <span className="text-purple-200">Connected Accounts:</span>
                           <span className="text-white">
                             {selectedUser.stats.accountProviders.length > 0 
                               ? selectedUser.stats.accountProviders.join(', ')
-                              : 'Yok'
+                              : 'None'
                             }
                           </span>
                         </div>
@@ -533,7 +533,7 @@ export default function SecureAdminPanel() {
                   <div className="bg-white/5 rounded-xl p-4">
                     <h4 className="text-white font-medium mb-3 flex items-center gap-2">
                       <Folder className="w-4 h-4" />
-                      Kategoriler ({selectedUser.user.categories.length})
+                      Categories ({selectedUser.user.categories.length})
                     </h4>
                     {selectedUser.user.categories.length > 0 ? (
                       <div className="space-y-3 max-h-60 overflow-y-auto">
@@ -542,21 +542,21 @@ export default function SecureAdminPanel() {
                             <div className="flex items-center justify-between mb-2">
                               <h5 className="text-white font-medium">{category.name}</h5>
                               <div className="flex items-center gap-2 text-xs text-purple-200">
-                                <span>{category.subcategories.length} alt kategori</span>
+                                <span>{category.subcategories.length} subcategories</span>
                                 <span>•</span>
-                                <span>{category.subcategories.reduce((total: number, sub: any) => total + sub.sites.length, 0)} site</span>
+                                <span>{category.subcategories.reduce((total: number, sub: any) => total + sub.sites.length, 0)} sites</span>
                               </div>
                             </div>
                             
                             {/* Subcategories */}
                             {category.subcategories.length > 0 && (
                               <div className="mt-2 space-y-1">
-                                <div className="text-xs text-purple-200 mb-1">Alt Kategoriler:</div>
+                                <div className="text-xs text-purple-200 mb-1">Subcategories:</div>
                                 {category.subcategories.map((sub: any) => (
                                   <div key={sub.id} className="bg-white/5 rounded px-2 py-1">
                                     <div className="flex items-center justify-between">
                                       <span className="text-white text-xs">{sub.name}</span>
-                                      <span className="text-purple-200 text-xs">{sub.sites.length} site</span>
+                                      <span className="text-purple-200 text-xs">{sub.sites.length} sites</span>
                                     </div>
                                     {/* Show sites under each subcategory */}
                                     {sub.sites.length > 0 && (
@@ -580,7 +580,7 @@ export default function SecureAdminPanel() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-purple-200 text-sm">Henüz kategori oluşturulmamış.</div>
+                      <div className="text-purple-200 text-sm">No categories created yet.</div>
                     )}
                   </div>
                 </div>
@@ -594,7 +594,7 @@ export default function SecureAdminPanel() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 w-full max-w-md">
               <div className="p-6 border-b border-white/20 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white">Yeni Kullanıcı Oluştur</h3>
+                <h3 className="text-xl font-bold text-white">Create New User</h3>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
@@ -622,34 +622,34 @@ export default function SecureAdminPanel() {
                     value={newUser.email}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                    placeholder="kullanici@email.com"
+                    placeholder="user@email.com"
                     required
                   />
                 </div>
                 
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">
-                    Ad Soyad
+                    Full Name
                   </label>
                   <input
                     type="text"
                     value={newUser.name}
                     onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                    placeholder="Kullanıcı Adı"
+                    placeholder="User Name"
                   />
                 </div>
                 
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">
-                    Şifre <span className="text-red-400">*</span>
+                    Password <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="password"
                     value={newUser.password}
                     onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                    placeholder="Minimum 6 karakter"
+                    placeholder="Minimum 6 characters"
                     required
                     minLength={6}
                   />
@@ -678,7 +678,7 @@ export default function SecureAdminPanel() {
                     className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-400"
                   />
                   <label htmlFor="emailVerified" className="text-white text-sm">
-                    Email doğrulanmış olarak işaretle
+                    Mark email as verified
                   </label>
                 </div>
                 
@@ -688,7 +688,7 @@ export default function SecureAdminPanel() {
                     disabled={actionLoading === 'create'}
                     className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg hover:from-green-600 hover:to-green-700 transition-all disabled:opacity-50 font-medium"
                   >
-                    {actionLoading === 'create' ? 'Oluşturuluyor...' : 'Kullanıcı Oluştur'}
+                    {actionLoading === 'create' ? 'Creating...' : 'Create User'}
                   </button>
                   <button
                     type="button"
@@ -704,7 +704,7 @@ export default function SecureAdminPanel() {
                     }}
                     className="px-4 py-2 text-white/60 hover:text-white transition-colors"
                   >
-                    İptal
+                    Cancel
                   </button>
                 </div>
               </form>

@@ -3,6 +3,7 @@ import { sendSiteReminder, sendActivityReminder, sendWeeklyDigest } from '@/lib/
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/simple-auth'
+import { checkPlanLimits } from '@/lib/planLimits'
 
 const siteReminderSchema = z.object({
   email: z.string().email(),
@@ -42,12 +43,13 @@ const createReminderSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getAuthUser(request)
+    const user = await getAuthUser(request)
+    
     
     if (!user) {
       return NextResponse.json({
         success: false,
-        error: 'Unauthorized'
+        error: 'Unauthorized - No user found'
       }, { status: 401 })
     }
 
@@ -107,12 +109,13 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Headers:', Object.fromEntries(request.headers.entries()))
     
-    const user = getAuthUser(request)
+    const user = await getAuthUser(request)
+    
     
     if (!user) {
       return NextResponse.json({
         success: false,
-        error: 'Unauthorized'
+        error: 'Unauthorized - No user found'
       }, { status: 401 })
     }
 
@@ -143,6 +146,24 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'Site not found or access denied'
         }, { status: 404 });
+      }
+
+      // Check reminder limits based on user's plan
+      const userPlan = user.isPremium ? 'PREMIUM' : 'FREE';
+      const currentRemindersCount = await prisma.reminder.count({
+        where: { userId: user.userId }
+      });
+
+      const limitCheck = checkPlanLimits(userPlan, 'reminder', {
+        totalReminders: currentRemindersCount
+      });
+
+      if (!limitCheck.allowed) {
+        return NextResponse.json({
+          success: false,
+          error: limitCheck.reason,
+          upgradeRequired: limitCheck.upgradeRequired
+        }, { status: 403 });
       }
 
       // Calculate next reminder date for recurring reminders

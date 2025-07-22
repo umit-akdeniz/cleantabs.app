@@ -1,10 +1,24 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { DatabaseConnection } from '@/lib/database/connection'
 
 export async function GET() {
   try {
-    // Check database connection
-    await prisma.$queryRaw`SELECT 1`
+    // Check database connection with health check
+    const dbHealth = await DatabaseConnection.healthCheck()
+    
+    if (dbHealth.status === 'unhealthy') {
+      return NextResponse.json(
+        { 
+          status: 'unhealthy', 
+          message: 'Database connection failed',
+          database: {
+            status: 'unhealthy',
+            error: dbHealth.error
+          }
+        },
+        { status: 503 }
+      )
+    }
     
     // Check environment variables
     const requiredEnvVars = [
@@ -41,12 +55,19 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
-      database: 'connected',
+      database: {
+        status: 'healthy',
+        latency: dbHealth.latency + 'ms'
+      },
       auth: {
         nextauth: !!process.env.NEXTAUTH_SECRET,
         providers: authProviders
       },
-      uptime: process.uptime()
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+      }
     })
     
   } catch (error) {

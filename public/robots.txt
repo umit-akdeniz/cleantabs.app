@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://cleantabs.app/sitemap.xml
+
+# Disallow sensitive paths
+Disallow: /api/
+Disallow: /admin/
+Disallow: /secure-admin/
+Disallow: /_next/
+Disallow: /dashboard/

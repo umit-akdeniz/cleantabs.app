@@ -37,6 +37,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     emailVerified: user.emailVerified,
     image: user.image,
     password: user.password,
+    fcmToken: user.fcmToken,
+    fcmTokenUpdated: user.fcmTokenUpdated,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     resetPasswordToken: user.resetPasswordToken,

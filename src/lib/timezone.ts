@@ -123,10 +123,9 @@ export const parseFromDateTimeLocal = (datetimeLocal: string, timezone?: string)
 
 // Add minutes to a date, handling timezone correctly
 export const addMinutesToDate = (date: Date, minutes: number, timezone?: string): Date => {
-  const userTz = timezone || getUserTimezone();
-  const userDate = toUserTimezone(date, userTz);
-  const newUserDate = new Date(userDate.getTime() + (minutes * 60000));
-  return fromUserTimezone(newUserDate, userTz);
+  // Simply add minutes to the current date without complex timezone conversion
+  // This ensures the reminder time is correctly calculated
+  return new Date(date.getTime() + (minutes * 60000));
 };
 
 // Check if a date is in the past (considering timezone)
@@ -140,9 +139,19 @@ export const isDateInPast = (date: Date, timezone?: string): boolean => {
 };
 
 // Format date for display in user's timezone
-export const formatDateForDisplay = (date: Date | string, timezone?: string, options?: Intl.DateTimeFormatOptions): string => {
+export const formatDateForDisplay = (date: Date | string | null | undefined, timezone?: string, options?: Intl.DateTimeFormatOptions): string => {
+  // Handle null/undefined dates
+  if (!date) {
+    return 'Not set';
+  }
+
   const userTz = timezone || getUserTimezone();
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid date';
+  }
   
   const defaultOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -158,10 +167,20 @@ export const formatDateForDisplay = (date: Date | string, timezone?: string, opt
 };
 
 // Get relative time string (e.g., "in 5 minutes", "2 hours ago")
-export const getRelativeTimeString = (date: Date | string, timezone?: string): string => {
+export const getRelativeTimeString = (date: Date | string | null | undefined, timezone?: string): string => {
+  // Handle null/undefined dates
+  if (!date) {
+    return 'Not set';
+  }
+
   const userTz = timezone || getUserTimezone();
   const now = new Date();
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid date';
+  }
   
   const nowInTz = toUserTimezone(now, userTz);
   const dateInTz = toUserTimezone(dateObj, userTz);

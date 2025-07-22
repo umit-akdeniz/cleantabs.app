@@ -86,6 +86,8 @@ model User {
   verificationTokenExpiry DateTime?
   verificationCode        String?
   verificationCodeExpiry  DateTime?
+  fcmToken                String?
+  fcmTokenUpdated         DateTime?
   accounts                Account[]
   categories              Category[]
   sessions                Session[]

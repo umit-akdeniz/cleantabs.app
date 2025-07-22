@@ -13,29 +13,29 @@ export default function CtAdminPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Admin email kontrolü
+  // Admin email check
   const isAdminEmail = user?.email === 'umitakdenizjob@gmail.com';
   
   useEffect(() => {
-    if (isLoading) return; // Loading durumunda bekle
+    if (isLoading) return; // Wait during loading state
     
     if (!isAuthenticated) {
-      // Giriş yapılmamışsa ana sayfaya yönlendir
+      // Redirect to homepage if not logged in
       router.push('/');
       return;
     }
     
     if (isAuthenticated && !isAdminEmail) {
-      // Yetkisiz kullanıcı - sadece animasyon göster
+      // Unauthorized user - show animation only
       return;
     }
   }, [isAuthenticated, isLoading, isAdminEmail, router]);
   
-  // Loading durumu
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Yükleniyor...</div>
+        <div className="text-white text-lg">Loading...</div>
       </div>
     );
   }

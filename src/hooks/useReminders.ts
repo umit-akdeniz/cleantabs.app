@@ -155,18 +155,7 @@ export const useReminders = () => {
           icon: '/icon-192x192.png',
           tag: `reminder-${reminder.id}`,
           requireInteraction: true,
-          actions: [
-            {
-              action: 'open',
-              title: 'Open Site',
-              icon: '/icon-192x192.png'
-            },
-            {
-              action: 'dismiss',
-              title: 'Dismiss',
-              icon: '/icon-192x192.png'
-            }
-          ]
+          // Actions removed for TypeScript compatibility
         });
         
         notification.onclick = () => {

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { JWTManager } from '@/lib/auth/jwt';
 
 export async function getAuthUser(request: NextRequest) {
   // First try custom headers (for middleware)
@@ -11,16 +12,28 @@ export async function getAuthUser(request: NextRequest) {
     return {
       userId,
       email,
-      plan: plan || 'FREE'
+      plan: plan || 'FREE',
+      isPremium: plan === 'PREMIUM'
     };
   }
 
-  // Then try Authorization header with simple tokens
+  // Then try Authorization header with JWT tokens
   const authHeader = request.headers.get('authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
     
-    // Handle simple tokens (format: simple_token_{userId}_{timestamp})
+    // First try JWT tokens
+    const jwtPayload = JWTManager.verifyAccessToken(token);
+    if (jwtPayload) {
+      return {
+        userId: jwtPayload.userId,
+        email: jwtPayload.email,
+        plan: jwtPayload.plan || 'FREE',
+        isPremium: jwtPayload.plan === 'PREMIUM'
+      };
+    }
+    
+    // Fall back to simple tokens (format: simple_token_{userId}_{timestamp})
     if (token.startsWith('simple_token_')) {
       const tokenParts = token.split('_');
       if (tokenParts.length >= 3) {
@@ -41,7 +54,8 @@ export async function getAuthUser(request: NextRequest) {
             return {
               userId: user.id,
               email: user.email,
-              plan: user.plan || 'FREE'
+              plan: user.plan || 'FREE',
+              isPremium: user.plan === 'PREMIUM'
             };
           }
         } catch (error) {

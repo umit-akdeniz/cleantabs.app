@@ -1,80 +1,59 @@
-# CleanTabs
+# CleanTabs - Production Ready
 
-Modern ve kullanıcı dostu bir site yönetim uygulaması. Dijital alanınızı organize edin, basitleştirin ve akışınızı optimize edin.
+**CleanTabs** is a minimal bookmark manager built with Next.js 15, ready for production deployment.
 
-## Özellikler
+## 🚀 Quick Start
 
-- 📱 Responsive tasarım
-- 🌙 Dark/Light mode
-- 🏷️ Kategori ve alt kategori yönetimi
-- 🔍 Gelişmiş arama ve filtreleme
-- 🎯 Temiz 3-panel arayüz
-- 🔗 Bookmark import/export
-- 💾 SQLite veritabanı
-- 🐳 Docker desteği
-- 🎨 AI destekli özellikler
+1. **Environment Setup:**
+   ```bash
+   cp .env.example .env
+   # Fill in your production values
+   ```
 
-## Kurulum
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
-### Geliştirme Ortamı
+3. **Database Setup:**
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
 
-```bash
-# Bağımlılıkları yükle
-npm install
+4. **Build:**
+   ```bash
+   npm run build
+   ```
 
-# Veritabanını hazırla
-npm run db:push
-npm run db:seed
+5. **Start:**
+   ```bash
+   npm start
+   ```
 
-# Geliştirme sunucusunu başlat
-npm run dev
-```
+## 🔐 Environment Variables Required
 
-### Production Deployment
+- `DATABASE_URL` - PostgreSQL connection string
+- `NEXTAUTH_SECRET` - NextAuth.js secret key  
+- `NEXTAUTH_URL` - Your domain URL
+- `ENCRYPTION_KEY` - 32+ character encryption key
+- Firebase Push Notification credentials (see .env.example)
 
-#### Docker ile
+## 📦 Production Features
 
-```bash
-# Hızlı deployment
-npm run deploy
+- ✅ Hardcoded secrets removed
+- ✅ Environment-based configuration
+- ✅ Security headers and HTTPS enforcement
+- ✅ Production-optimized build
+- ✅ Clean codebase - dev/test files removed
+- ✅ Firebase push notifications ready
+- ✅ Authentication system
+- ✅ Bookmark management
 
-# Manuel deployment
-docker build -t cleantabs-app .
-docker run -p 3000:3000 -v $(pwd)/database.db:/app/database.db cleantabs-app
-```
+## 🔒 Security
 
-#### Docker Compose ile
+All sensitive data must be provided via environment variables. No hardcoded credentials remain in the codebase.
 
-```bash
-docker-compose up -d
-```
+## 📱 Deploy
 
-## Environment Variables
-
-`.env.example` dosyasını `.env` olarak kopyalayın ve gerekli değişkenleri ayarlayın:
-
-```env
-DATABASE_URL="file:./database.db"
-NEXTAUTH_SECRET="your-secret-here"
-NEXTAUTH_URL="http://localhost:3000"
-NEXT_PUBLIC_APP_URL="https://cleantabs.app"
-```
-
-## Scripts
-
-- `npm run dev` - Geliştirme sunucusu
-- `npm run build` - Production build
-- `npm run start` - Production sunucu
-- `npm run db:seed` - Veritabanını örnek verilerle doldur
-- `npm run deploy` - Docker ile deploy et
-
-## Teknolojiler
-
-- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
-- **Database**: SQLite, Prisma ORM
-- **Icons**: Lucide React
-- **Deployment**: Docker
-
-## Lisans
-
-MIT
+Ready for deployment on Vercel, Railway, or any Node.js hosting platform.

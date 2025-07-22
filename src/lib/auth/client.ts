@@ -75,9 +75,10 @@ class AuthClient {
     this.safeLocalStorage.setItem('refreshToken', tokens.refreshToken)
     
     // Also set as httpOnly cookie for middleware
-    if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
       // Set as regular cookie for middleware to read
-      document.cookie = `accessToken=${tokens.accessToken}; path=/; SameSite=Lax; Secure=${location.protocol === 'https:'}`
+      const isSecure = window.location.protocol === 'https:'
+      document.cookie = `accessToken=${tokens.accessToken}; path=/; SameSite=Lax; Secure=${isSecure}`
     }
   }
 

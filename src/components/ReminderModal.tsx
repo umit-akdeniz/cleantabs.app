@@ -57,8 +57,10 @@ export default function ReminderModal({
 
   const setQuickReminder = (minutes: number) => {
     const now = new Date();
-    const reminderTime = addMinutesToDate(now, minutes, selectedTimezone);
+    const reminderTime = addMinutesToDate(now, minutes);
     setQuickDateTime(reminderTime);
+    
+    // Format date for datetime-local input (browser handles timezone)
     setDateTimeLocal(formatForDateTimeLocal(reminderTime));
     setActiveTab('quick');
   };

@@ -93,7 +93,7 @@ export default function AddSiteModal({ isOpen, onClose, onSave, editingSite, cat
 
   const addSubLink = () => {
     const newSubLink: SubLink = {
-      id: generateId('sublink'),
+      id: generateId(),
       name: '',
       url: '',
       description: ''

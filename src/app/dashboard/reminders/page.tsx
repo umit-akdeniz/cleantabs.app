@@ -6,12 +6,13 @@ import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Bell, Calendar, Clock, Edit, Trash2, Plus, CheckCircle, XCircle, Download, Crown } from 'lucide-react';
+import { formatDateForDisplay, getUserTimezone } from '@/lib/timezone';
 
 interface Reminder {
   id: string;
   title: string;
   description: string;
-  nextReminderDate: string;
+  reminderDate: string; // Changed from nextReminderDate to reminderDate
   reminderType: string;
   siteId: string;
   site?: {
@@ -19,7 +20,7 @@ interface Reminder {
     name: string;
     url: string;
   };
-  isActive: boolean;
+  completed: boolean; // Changed from isActive to completed (matches database)
   createdAt: string;
 }
 
@@ -34,12 +35,12 @@ function RemindersContent() {
   const [editForm, setEditForm] = useState<{
     title: string;
     description: string;
-    nextReminderDate: string;
+    reminderDate: string;
     reminderType: string;
   }>({
     title: '',
     description: '',
-    nextReminderDate: '',
+    reminderDate: '',
     reminderType: 'once'
   });
 
@@ -59,9 +60,23 @@ function RemindersContent() {
     }
   }, [searchParams, reminders]);
 
+  // Helper function to get auth headers
+  const getAuthHeaders = (additionalHeaders: Record<string, string> = {}) => {
+    const accessToken = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = { ...additionalHeaders };
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    
+    return headers;
+  };
+
   const fetchReminders = async () => {
     try {
-      const response = await fetch('/api/reminders');
+      const response = await fetch('/api/reminders', { 
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         const data = await response.json();
         console.log('API Response:', data); // Debug log
@@ -81,7 +96,7 @@ function RemindersContent() {
     setEditForm({
       title: reminder.title,
       description: reminder.description,
-      nextReminderDate: reminder.nextReminderDate,
+      reminderDate: reminder.reminderDate,
       reminderType: reminder.reminderType
     });
   };
@@ -91,7 +106,7 @@ function RemindersContent() {
     setEditForm({
       title: '',
       description: '',
-      nextReminderDate: '',
+      reminderDate: '',
       reminderType: 'once'
     });
   };
@@ -102,7 +117,7 @@ function RemindersContent() {
     try {
       const response = await fetch(`/api/reminders/${editingReminder}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(editForm)
       });
       
@@ -121,7 +136,8 @@ function RemindersContent() {
     
     try {
       const response = await fetch(`/api/reminders/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         setReminders(reminders.filter(r => r.id !== id));
@@ -138,8 +154,8 @@ function RemindersContent() {
 
       const response = await fetch(`/api/reminders/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...reminder, isActive: !reminder.isActive })
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ ...reminder, completed: !reminder.completed })
       });
       
       if (response.ok) {
@@ -152,14 +168,16 @@ function RemindersContent() {
   };
 
   const filteredReminders = reminders.filter(reminder => {
-    if (filter === 'active') return reminder.isActive;
-    if (filter === 'completed') return !reminder.isActive;
+    if (filter === 'active') return !reminder.completed;
+    if (filter === 'completed') return reminder.completed;
     return true;
   });
 
   const downloadCalendarEvent = async (reminderId: string) => {
     try {
-      const response = await fetch(`/api/calendar/reminder?id=${reminderId}`);
+      const response = await fetch(`/api/calendar/reminder?id=${reminderId}`, {
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -240,7 +258,7 @@ function RemindersContent() {
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Active ({reminders.filter(r => r.isActive).length})
+              Active ({reminders.filter(r => !r.completed).length})
             </button>
             <button
               onClick={() => setFilter('completed')}
@@ -250,7 +268,7 @@ function RemindersContent() {
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Completed ({reminders.filter(r => !r.isActive).length})
+              Completed ({reminders.filter(r => r.completed).length})
             </button>
             <button
               onClick={() => setFilter('all')}
@@ -268,11 +286,11 @@ function RemindersContent() {
           <div className="flex items-center gap-4">
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-slate-200/50 dark:border-slate-700/50">
               <div className="text-sm text-slate-600 dark:text-slate-400">Active</div>
-              <div className="text-xl font-bold text-blue-600">{reminders.filter(r => r.isActive).length}</div>
+              <div className="text-xl font-bold text-blue-600">{reminders.filter(r => !r.completed).length}</div>
             </div>
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-slate-200/50 dark:border-slate-700/50">
               <div className="text-sm text-slate-600 dark:text-slate-400">Completed</div>
-              <div className="text-xl font-bold text-green-600">{reminders.filter(r => !r.isActive).length}</div>
+              <div className="text-xl font-bold text-green-600">{reminders.filter(r => r.completed).length}</div>
             </div>
           </div>
         </div>
@@ -333,7 +351,7 @@ function RemindersContent() {
               <div
                 key={reminder.id}
                 className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6 shadow-sm hover:shadow-lg transition-all ${
-                  !reminder.isActive ? 'opacity-75' : ''
+                  reminder.completed ? 'opacity-75' : ''
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -341,7 +359,7 @@ function RemindersContent() {
                     <button
                       onClick={() => toggleCompleted(reminder.id)}
                       className={`mt-1 p-2 rounded-xl transition-all ${
-                        reminder.isActive
+                        !reminder.completed
                           ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400'
                           : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                       }`}
@@ -383,8 +401,8 @@ function RemindersContent() {
                               </label>
                               <input
                                 type="datetime-local"
-                                value={editForm.nextReminderDate}
-                                onChange={(e) => setEditForm({...editForm, nextReminderDate: e.target.value})}
+                                value={editForm.reminderDate}
+                                onChange={(e) => setEditForm({...editForm, reminderDate: e.target.value})}
                                 className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                               />
                             </div>
@@ -424,7 +442,7 @@ function RemindersContent() {
                       ) : (
                         <>
                           <h3 className={`text-lg font-bold text-slate-900 dark:text-slate-100 mb-2 ${
-                            !reminder.isActive ? 'line-through text-slate-500' : ''
+                            reminder.completed ? 'line-through text-slate-500' : ''
                           }`}>
                             {reminder.title}
                           </h3>
@@ -438,13 +456,13 @@ function RemindersContent() {
                             <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                               <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                               <span className="font-medium text-blue-700 dark:text-blue-300">
-                                {formatDate(reminder.nextReminderDate)}
+                                {formatDateForDisplay(reminder.reminderDate, getUserTimezone(), { month: 'short', day: 'numeric', year: 'numeric' })}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 px-3 py-1 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
                               <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                               <span className="font-medium text-purple-700 dark:text-purple-300">
-                                {new Date(reminder.nextReminderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {formatDateForDisplay(reminder.reminderDate, getUserTimezone(), { hour: '2-digit', minute: '2-digit', timeZoneName: undefined })}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
@@ -486,13 +504,13 @@ function RemindersContent() {
                     <button
                       onClick={() => toggleCompleted(reminder.id)}
                       className={`p-2 rounded-xl transition-colors ${
-                        !reminder.isActive
+                        reminder.completed
                           ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/50'
                           : 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50'
                       }`}
-                      title={!reminder.isActive ? 'Mark as active' : 'Mark as completed'}
+                      title={reminder.completed ? 'Mark as active' : 'Mark as completed'}
                     >
-                      {!reminder.isActive ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                      {reminder.completed ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={() => deleteReminder(reminder.id)}

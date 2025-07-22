@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       where: {
         subcategory: {
           category: {
-            userId: user.userId
+            userId: (await user)?.userId
           }
         }
       },
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       where: {
         id: subcategoryId,
         category: {
-          userId: user.userId
+          userId: (await user)?.userId
         }
       }
     });

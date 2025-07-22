@@ -115,7 +115,7 @@ export default function SettingsPage() {
                   className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   <option value="en">English</option>
-                  <option value="tr">Türkçe</option>
+                  <option value="tr">Turkish</option>
                 </select>
               </div>
             </div>

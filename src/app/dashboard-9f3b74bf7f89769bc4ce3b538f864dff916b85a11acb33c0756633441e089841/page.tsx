@@ -168,7 +168,7 @@ export default function AdminDashboard() {
             <nav className="-mb-px flex space-x-8">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-                { id: 'users', label: 'Kullanıcılar', icon: Users },
+                { id: 'users', label: 'Userlar', icon: Users },
                 { id: 'sites', label: 'Site Yönetimi', icon: Globe },
                 { id: 'settings', label: 'Ayarlar', icon: Settings }
               ].map((tab) => (
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
                 icon={Users}
-                title="Toplam Kullanıcı"
+                title="Toplam User"
                 value={users.length}
                 change="+12% bu ay"
                 color="blue"
@@ -232,10 +232,10 @@ export default function AdminDashboard() {
               <div className="p-6">
                 <div className="space-y-4">
                   {[
-                    { user: 'john@example.com', action: 'Yeni hesap oluşturdu', time: '5 dakika önce', type: 'user' },
-                    { user: 'jane@example.com', action: 'Premium plana geçti', time: '2 saat önce', type: 'upgrade' },
-                    { user: 'mike@example.com', action: '15 yeni site ekledi', time: '4 saat önce', type: 'content' },
-                    { user: 'sarah@example.com', action: 'Hesabını sildi', time: '1 gün önce', type: 'user' }
+                    { user: 'john@example.com', action: 'Created new account', time: '5 minutes ago', type: 'user' },
+                    { user: 'jane@example.com', action: 'Upgraded to Premium', time: '2 hours ago', type: 'upgrade' },
+                    { user: 'mike@example.com', action: 'Added 15 new sites', time: '4 hours ago', type: 'content' },
+                    { user: 'sarah@example.com', action: 'Deleted account', time: '1 day ago', type: 'user' }
                   ].map((activity, index) => (
                     <div key={index} className="flex items-center gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg">
                       <div className={`w-2 h-2 rounded-full ${
@@ -261,10 +261,10 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Kullanıcı Yönetimi</h2>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">User Yönetimi</h2>
               <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 <Plus className="w-4 h-4" />
-                Yeni Kullanıcı
+                Yeni User
               </button>
             </div>
 
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
                   <thead className="bg-slate-50 dark:bg-slate-700">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Kullanıcı
+                        User
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Plan
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
                     ) : users.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-4 text-center text-slate-500">
-                          Kullanıcı bulunamadı
+                          User bulunamadı
                         </td>
                       </tr>
                     ) : (

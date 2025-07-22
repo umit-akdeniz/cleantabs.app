@@ -134,6 +134,102 @@ export const sendVerificationEmail = async (email: string, token: string) => {
   });
 };
 
+// Welcome email template
+export const sendWelcomeEmail = async (email: string, name: string) => {
+  const loginUrl = `${process.env.NEXTAUTH_URL}/dashboard`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to CleanTabs!</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8fafc;">
+      <div style="background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 40px 30px; text-align: center;">
+          <div style="background: rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 50%; width: 60px; height: 60px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+            🎉
+          </div>
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Welcome to CleanTabs!</h1>
+          <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 16px;">Your account has been created successfully</p>
+        </div>
+        
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Hello ${name}! 👋</h2>
+          <p style="color: #64748b; margin: 0 0 24px 0; font-size: 16px;">Welcome to CleanTabs - the clean, minimal way to organize your favorite websites!</p>
+          
+          <div style="background: #f1f5f9; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #10b981;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+              <strong style="color: #1e293b; font-size: 16px;">🚀 You're all set to start organizing!</strong>
+            </div>
+            <p style="color: #475569; margin: 8px 0 0 0; font-size: 15px; line-height: 1.6;">
+              We've created some sample categories and bookmarks to help you get started. You can customize, edit, or delete them anytime.
+            </p>
+          </div>
+          
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #0ea5e9;">
+            <h3 style="color: #1e293b; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">✨ What's included:</h3>
+            <ul style="color: #475569; margin: 0; font-size: 15px; line-height: 1.6; padding-left: 20px;">
+              <li>📂 Pre-organized categories (Work, Learning, Entertainment, etc.)</li>
+              <li>🌟 Essential bookmarks to get you started</li>
+              <li>📝 Personal notes feature for each bookmark</li>
+              <li>⏰ Reminder system to revisit important sites</li>
+              <li>📤 Import/Export functionality for your existing bookmarks</li>
+            </ul>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #1e293b; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">🎯 Quick Start Tips:</h3>
+            <ul style="color: #475569; margin: 0; font-size: 15px; line-height: 1.6; padding-left: 20px;">
+              <li>Click on any site to view details and add personal notes</li>
+              <li>Use the "+" button to add your own bookmarks</li>
+              <li>Set up reminders to revisit important websites</li>
+              <li>Import your existing bookmarks using the Import feature</li>
+              <li>Organize everything with custom categories and subcategories</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${loginUrl}" 
+               style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); 
+                      color: white; 
+                      padding: 16px 32px; 
+                      text-decoration: none; 
+                      border-radius: 12px; 
+                      font-weight: 600;
+                      font-size: 16px;
+                      display: inline-block;
+                      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+              🏠 Go to Dashboard
+            </a>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 24px 0;">
+            <p style="color: #64748b; margin: 0; font-size: 14px; text-align: center;">
+              <strong>Need help?</strong> Check out our help section or contact support.<br>
+              We're here to help you organize your digital life!
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 24px; color: #94a3b8; font-size: 12px;">
+        <p>© 2024 CleanTabs. Made with ❤️ for organized minds.</p>
+        <p>This email was sent because you created a CleanTabs account.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: '🎉 Welcome to CleanTabs - Your Account is Ready!',
+    html,
+  });
+};
+
 // Bookmark export email template
 export const sendBookmarkExport = async (email: string, bookmarksHtml: string, count: number) => {
   const html = `
